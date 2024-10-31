@@ -34,14 +34,30 @@ const insertUser = async (curUser) => {
     return result;
 }
 
-// Function to find a user by firebase_uid
-const findUser = async (firebase_uid) => {
+const findUser = async (firebaseUid) => {
     let query = {
         text: 'SELECT * FROM users WHERE firebase_uid = $1',
-        values: [firebase_uid],
+        values: [firebaseUid],
     };
     let result = await client.query(query);
-    return result.rows;
+    return result.rows[0];
+}
+
+const insertFutureTrip = async (newTrip) => {
+    userId = (await findUser(newTrip.driverFbid)).id;
+    let result = await client.query('INSERT INTO future_trips (driver_id, start_location, destination, start_time, eta, distance, avoid_highways, avoid_tolls, is_full) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+        [userId, newTrip.startLocation, newTrip.destination, newTrip.startTime, newTrip.eta, newTrip.distance, newTrip.avoidHighways, newTrip.avoidTolls, false]);
+    return result;
+}
+
+const findFutureTrips = async (driverFbid) => {
+    driverId = (await findUser(driverFbid)).id;
+    let query = {
+        text: 'SELECT * FROM future_trips WHERE driver_id = $1',
+        values: [driverId],
+    };
+    let result = await client.query(query);
+    return result;
 }
 
 const findRiderTrips = async (firebase_uid) => {    
@@ -115,9 +131,11 @@ client.connect()
                 driver_id INTEGER REFERENCES users(id),
                 start_location VARCHAR(100),
                 destination VARCHAR(100),
-                start_time TIMESTAMP,
-                eta TIMESTAMP,
+                start_time BIGINT,
+                eta BIGINT,
                 distance FLOAT,
+                avoid_highways BOOLEAN,
+                avoid_tolls BOOLEAN,  
                 is_full BOOLEAN,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
@@ -154,4 +172,4 @@ client.connect()
         console.log('Error connecting to PostgreSQL or creating tables:', error);
     });
 
-module.exports = { client, doesUserExist, insertUser, findUser, findRiderTrips, findDriverTrips };
+module.exports = { client, doesUserExist, insertUser, findUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips };

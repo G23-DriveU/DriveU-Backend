@@ -1,16 +1,13 @@
 // server.js
 
 const express = require('express');
-const axios = require('axios');
-const { client, doesUserExist, insertUser, findUser, findRiderTrips, findDriverTrips } = require('./database'); // Import the client from database.js
+const { client, doesUserExist, insertUser, findUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips } = require('./database'); // Import the client from database.js
 const User = require('./User');
 const Driver = require('./Driver');
-require('dotenv').config();
+const FutureTrip = require('./FutureTrip');
 
 const app = express();
 const port = 8080;
-
-const mapsAPIkey = process.env.MAPS_API_KEY;
 
 // GET request to fetch a user with firebase_uid
 app.get('/users', async (req, res) => {
@@ -19,12 +16,12 @@ app.get('/users', async (req, res) => {
         let result = await findUser(req.query.firebase_uid)
         res.json(result);
     } catch (error) {
-        console.log("GET USER ERROR");
+        console.log("GET USER ERROR", error);
         res.status(500).send(error);
     }
 });
 
-// POST request to create a new user
+// ADD editing user info
 app.post('/users', async (req, res) => {
     console.log("POST USERS: ", req.query);
 
@@ -47,7 +44,7 @@ app.post('/users', async (req, res) => {
     }
 });
 
-// GET request to view trips
+//DOESNT WORK
 app.get('/trips', async (req, res) => {
     console.log("GET TRIP: ", req.query);
     try {
@@ -68,12 +65,50 @@ app.get('/trips', async (req, res) => {
         };
         res.json(response);
     } catch (error) {
-        console.log("GET TRIPS ERROR")
+        console.log("GET TRIPS ERROR", error)
         res.status(500).send(error);
     }
 });
 
-//creating a new trip
+//ADD functionality for rider to find future trips
+//HOW to automatically cancel trips 30 mins after and send notis to driver 5 mins before??
+app.get('/futureTrips', async (req, res) => {
+    console.log("GET FUTURE TRIPS: ", req.query);
+    try {
+        let result = await findFutureTrips(req.query.driverFbid);
+        res.json(result);
+    } catch (error) {  
+        console.log("GET FUTURE TRIPS ERROR", error);
+        res.status(500).send(error);
+    }
+});
+
+app.post('/futureTrips', async (req, res) => {
+    console.log("POST FUTURE TRIPS: ", req.query);
+    try {
+        let newTrip = await FutureTrip.createFutureTrip(req.query);
+        let prevFutureTrips = await findFutureTrips(newTrip.driverFbid);
+        prevFutureTripsCount = prevFutureTrips.rowCount;
+        prevFutureTrips = prevFutureTrips.rows;
+        
+        //check for overlapping future trips before adding new future trip
+        for (let i = 0; i < prevFutureTripsCount; i++) {
+            if (prevFutureTrips[i].start_time <= newTrip.eta && prevFutureTrips[i].eta >= newTrip.startTime) {
+                console.log("Overlapping future trips");
+                res.status(409).send('Overlapping future trips');
+                return;
+            }
+        }
+
+        insertFutureTrip(newTrip);
+        res.status(201).json(newTrip);
+    } catch (error) {
+        console.log("POST FUTURE TRIPS ERROR", error)
+        res.status(500).send(error);
+    }
+});
+
+//DOESNT WORK
 app.post('/trips', async (req, res) => {
     console.log("POST TRIP: ", req.query);
     try {
@@ -137,29 +172,6 @@ app.post('/trips', async (req, res) => {
         res.status(500).send(error);
     }
 });
-
-//API call to google maps that gets the best route
-const getBestRoute = async (src, dest, avoidHighways, avoidTolls) => {
-    let avoidStuff = "";
-    if (avoidHighways == true && avoidTolls == true) 
-        avoidStuff = "tolls|highways";
-    else if (avoidHighways == true)
-        avoidStuff = "highways";
-    else if (avoidTolls == true)
-        avoidStuff = "tolls";
-	let response = await axios.get('https://maps.googleapis.com/maps/api/directions/json', {
-		params: {
-			origin: src, // origin
-            destination: dest, // ending point
-            mode: "DRIVE",
-            key: mapsAPIkey,
-            avoid: avoidStuff
-		}
-	});
-
-	console.log("Maps API Response: ", response.data); // Check the API response
-	return response.data;
-}
 
 // Start the server
 app.listen(port, (error) => {
