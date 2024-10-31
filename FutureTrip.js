@@ -39,10 +39,15 @@ class FutureTrip {
                 avoid: avoidStuff
             }
         });
+
+        console.log("Maps API Response: ", response.data); // Check the API response
         
+        if (response.data.status != "OK") {
+            throw new Error("Error in API response");
+        }
+
         this.distance = this.metersToMiles(response.data.routes[0].legs[0].distance.value);
         this.eta = this.startTime + response.data.routes[0].legs[0].duration.value;
-        console.log("Maps API Response: ", response.data); // Check the API response
     }
 
     metersToMiles(meters) {

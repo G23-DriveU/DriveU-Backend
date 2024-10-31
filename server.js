@@ -1,4 +1,10 @@
-// server.js
+/*
+fix trip database entries
+fix ride request database entries
+add edit user info functionality and profile pic functionality
+add find future_trips functionality for riders (dont pull up trips where they are driver)
+automatically cancel future trips 30 mins after and send notis to driver 5 mins before??
+*/
 
 const express = require('express');
 const { client, doesUserExist, insertUser, findUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips } = require('./database'); // Import the client from database.js
@@ -9,7 +15,6 @@ const FutureTrip = require('./FutureTrip');
 const app = express();
 const port = 8080;
 
-// GET request to fetch a user with firebase_uid
 app.get('/users', async (req, res) => {
     console.log("GET USERS: ", req.query);
     try {
@@ -21,7 +26,6 @@ app.get('/users', async (req, res) => {
     }
 });
 
-// ADD editing user info
 app.post('/users', async (req, res) => {
     console.log("POST USERS: ", req.query);
 
@@ -70,15 +74,13 @@ app.get('/trips', async (req, res) => {
     }
 });
 
-//ADD functionality for rider to find future trips
-//HOW to automatically cancel trips 30 mins after and send notis to driver 5 mins before??
 app.get('/futureTrips', async (req, res) => {
     console.log("GET FUTURE TRIPS: ", req.query);
     try {
         let result = await findFutureTrips(req.query.driverFbid);
         res.json(result);
     } catch (error) {  
-        console.log("GET FUTURE TRIPS ERROR", error);
+        console.log("GET FUTURE TRIPS ERROR", error)
         res.status(500).send(error);
     }
 });
@@ -103,8 +105,14 @@ app.post('/futureTrips', async (req, res) => {
         insertFutureTrip(newTrip);
         res.status(201).json(newTrip);
     } catch (error) {
-        console.log("POST FUTURE TRIPS ERROR", error)
-        res.status(500).send(error);
+        //catches invalid routes or addresses
+        if (error.toString().trim() == "Error: Error in API response") {
+            res.status(404).send('No route found');
+        }
+        else {
+            console.log("POST FUTURE TRIPS ERROR", error);
+            res.status(500).send(error);
+        }
     }
 });
 
