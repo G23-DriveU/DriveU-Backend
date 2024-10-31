@@ -1,16 +1,24 @@
 /*
-fix trip database entries
-fix ride request database entries
+After login, userId from Postgres will be used, NOT firebase_uid
+
+TODO
+ADD different responses to ride request (accept and delete)
+fix trip database entries and include transitioning to trip
+fix trip route to find all past trips
+Add notification functionality for ride requests to driver when submitted
+Incorporate paypal and cost functionality to ride requests
+add update device id functionality when logging in mobile app
 add edit user info functionality and profile pic functionality
 add find future_trips functionality for riders (dont pull up trips where they are driver)
 automatically cancel future trips 30 mins after and send notis to driver 5 mins before??
 */
 
 const express = require('express');
-const { client, doesUserExist, insertUser, findUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, deleteFutureTrip } = require('./database'); // Import the client from database.js
+const { client, doesUserExist, insertUser, findUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, deleteFutureTrip, insertRideRequest } = require('./database'); // Import the client from database.js
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
+const RideRequest = require('./RideRequest');
 
 const app = express();
 const port = 8080;
@@ -77,7 +85,7 @@ app.get('/trips', async (req, res) => {
 app.get('/futureTrips', async (req, res) => {
     console.log("GET FUTURE TRIPS: ", req.query);
     try {
-        let result = await findFutureTrips(req.query.driverFbid);
+        let result = await findFutureTrips(req.query.driverId);
         res.json(result);
     } catch (error) {  
         console.log("GET FUTURE TRIPS ERROR", error)
@@ -89,7 +97,7 @@ app.post('/futureTrips', async (req, res) => {
     console.log("POST FUTURE TRIPS: ", req.query);
     try {
         let newTrip = await FutureTrip.createFutureTrip(req.query);
-        let prevFutureTrips = await findFutureTrips(newTrip.driverFbid);
+        let prevFutureTrips = await findFutureTrips(newTrip.driverId);
         prevFutureTripsCount = prevFutureTrips.rowCount;
         prevFutureTrips = prevFutureTrips.rows;
         
@@ -102,8 +110,8 @@ app.post('/futureTrips', async (req, res) => {
             }
         }
 
-        insertFutureTrip(newTrip);
-        res.status(201).json(newTrip);
+        result = await insertFutureTrip(newTrip);
+        res.status(201).json(result);
     } catch (error) {
         //catches invalid routes or addresses
         if (error.toString().trim() == "Error: Error in API response") {
@@ -116,14 +124,42 @@ app.post('/futureTrips', async (req, res) => {
     }
 });
 
-//Deletes based on driverFbid and startTime since no overlap (startTimes are unique for each driver)
+//Deletes based on driverId and startTime since no overlap (startTimes are unique for each driver)
 app.delete('/futureTrips', async (req, res) => {
     console.log("DELETE FUTURE TRIPS: ", req.query);
     try {
-        let result = deleteFutureTrip(req.query.driverFbid, req.query.startTime);
+        let result = deleteFutureTrip(req.query.futureTripId);
         res.json(result);
     } catch (error) {
         console.log("DELETE FUTURE TRIPS ERROR", error);
+        res.status(500).send(error);
+    }
+});
+
+app.get('/rideRequests', async (req, res) => {
+    console.log("GET RIDE REQUESTS: ", req.query);
+    try {
+        let result = await findRideRequests(req.query.futureTripId);
+        res.json(result);
+    } catch (error) {
+        console.log("GET RIDE REQUESTS ERROR", error);
+        res.status(500).send(error);
+    }
+});
+
+app.post('/rideRequests', async (req, res) => {
+    console.log("POST RIDE REQUESTS: ", req.query);
+    try {
+        let newRideRequest = await RideRequest.createRideRequest(req.query);
+        //SEND NOTIFICATION TO DRIVER
+        result = await insertRideRequest(newRideRequest);
+        res.status(201).json(result);
+    } catch (error) {
+        if (error.toString().trim() == "Error: Rider already requested ride") {
+            res.status(409).send('Rider already requested ride');
+            return;
+        }
+        console.log("POST RIDE REQUESTS ERROR", error);
         res.status(500).send(error);
     }
 });

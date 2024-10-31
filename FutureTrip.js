@@ -5,7 +5,7 @@ const mapsAPIkey = process.env.MAPS_API_KEY;
 
 class FutureTrip {
     constructor(reqBody) {
-        this.driverFbid = reqBody.driverFbid;
+        this.driverId = reqBody.driverId;
         this.startLocation = reqBody.startLocation;
         this.destination = reqBody.destination;
         this.startTime = parseInt(reqBody.startTime, 10); // in seconds since epoch

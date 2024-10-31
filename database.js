@@ -5,12 +5,11 @@ const { Client } = require('pg');
 const client = new Client({
     user: 'postgres',
     host: 'localhost',
-    database: 'postgres', // Use the new database name
+    database: 'postgres',
     password: 'postgres',
     port: 5432,
 });
 
-// Function to check if a user exists by firebase_uid
 const doesUserExist = async (firebase_uid) => {
     const query = {
         text: 'SELECT EXISTS (SELECT 1 FROM users WHERE firebase_uid = $1)',
@@ -43,15 +42,22 @@ const findUser = async (firebaseUid) => {
     return result.rows[0];
 }
 
+const findUserById = async (userId) => {
+    let query = {
+        text: 'SELECT * FROM users WHERE id = $1',
+        values: [userId],
+    };
+    let result = await client.query(query);
+    return result.rows[0];
+}
+
 const insertFutureTrip = async (newTrip) => {
-    userId = (await findUser(newTrip.driverFbid)).id;
     let result = await client.query('INSERT INTO future_trips (driver_id, start_location, destination, start_time, eta, distance, avoid_highways, avoid_tolls, is_full) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-        [userId, newTrip.startLocation, newTrip.destination, newTrip.startTime, newTrip.eta, newTrip.distance, newTrip.avoidHighways, newTrip.avoidTolls, false]);
+        [newTrip.driverId, newTrip.startLocation, newTrip.destination, newTrip.startTime, newTrip.eta, newTrip.distance, newTrip.avoidHighways, newTrip.avoidTolls, false]);
     return result;
 }
 
-const findFutureTrips = async (driverFbid) => {
-    driverId = (await findUser(driverFbid)).id;
+const findFutureTrips = async (driverId) => {
     let query = {
         text: 'SELECT * FROM future_trips WHERE driver_id = $1',
         values: [driverId],
@@ -60,11 +66,34 @@ const findFutureTrips = async (driverFbid) => {
     return result;
 }
 
-const deleteFutureTrip = async (driverFbid, startTime) => {
-    driverId = (await findUser(driverFbid)).id;
+const findFutureTrip = async (futureTripId) => {
     let query = {
-        text: 'DELETE FROM future_trips WHERE driver_id = $1 AND start_time = $2',
-        values: [driverId, startTime],
+        text: 'SELECT * FROM future_trips WHERE id = $1',
+        values: [futureTripId],
+    };
+    let result = await client.query(query);
+    return result.rows[0];
+}
+
+const deleteFutureTrip = async (futureTripId) => {
+    let query = {
+        text: 'DELETE FROM future_trips WHERE id = $1',
+        values: [futureTripId],
+    };
+    let result = await client.query(query);
+    return result;
+}
+
+const insertRideRequest = async (newRideRequest) => {
+    let result = await client.query('INSERT INTO ride_requests (future_trip_id, rider_id, rider_location, rider_cost, driver_payout, status, distance, round_trip, authorization_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+        [newRideRequest.futureTripId, newRideRequest.riderId, newRideRequest.riderLocation, newRideRequest.riderCost, newRideRequest.driverPayout, newRideRequest.status, newRideRequest.distance, newRideRequest.roundTrip, newRideRequest.authorizationId]);
+    return result;
+};
+
+const findRideRequest = async (futureTripId) => {
+    let query = {
+        text: 'SELECT * FROM ride_requests WHERE future_trip_id = $1',
+        values: [futureTripId],
     };
     let result = await client.query(query);
     return result;
@@ -126,9 +155,13 @@ client.connect()
                 driver_id INTEGER REFERENCES users(id),
                 rider_id INTEGER REFERENCES users(id),
                 start_location VARCHAR(100),
+                rider_location VARCHAR(100),
                 destination VARCHAR(100),
                 started_at TIMESTAMP,
                 ended_at TIMESTAMP,
+                round_trip BOOLEAN,
+                driver_payout FLOAT,
+                rider_cost FLOAT,
                 distance FLOAT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
@@ -156,9 +189,9 @@ client.connect()
             CREATE TABLE IF NOT EXISTS ride_requests (
                 id SERIAL PRIMARY KEY,
                 future_trip_id INTEGER REFERENCES future_trips(id),
-                user_id INTEGER REFERENCES users(id),
-                start_location VARCHAR(128),
-                cost FLOAT,
+                rider_id INTEGER REFERENCES users(id),
+                rider_location VARCHAR(128),
+                rider_cost FLOAT,
                 driver_payout FLOAT,
                 status VARCHAR(10),
                 distance FLOAT,
@@ -182,4 +215,4 @@ client.connect()
         console.log('Error connecting to PostgreSQL or creating tables:', error);
     });
 
-module.exports = { client, doesUserExist, insertUser, findUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, deleteFutureTrip };
+module.exports = { client, doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest };
