@@ -7,7 +7,7 @@ automatically cancel future trips 30 mins after and send notis to driver 5 mins 
 */
 
 const express = require('express');
-const { client, doesUserExist, insertUser, findUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips } = require('./database'); // Import the client from database.js
+const { client, doesUserExist, insertUser, findUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, deleteFutureTrip } = require('./database'); // Import the client from database.js
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
@@ -63,7 +63,7 @@ app.get('/trips', async (req, res) => {
 
         let riderTrips = await findRiderTrips(user[0].id);
         let driverTrips = await findDriverTrips(user[0].id);
-        let response = { //TESTTT INCLUDING DRIVER/RIDER INFO
+        let response = { 
             "riderTrips": riderTrips, 
             "driverTrips": driverTrips
         };
@@ -113,6 +113,18 @@ app.post('/futureTrips', async (req, res) => {
             console.log("POST FUTURE TRIPS ERROR", error);
             res.status(500).send(error);
         }
+    }
+});
+
+//Deletes based on driverFbid and startTime since no overlap (startTimes are unique for each driver)
+app.delete('/futureTrips', async (req, res) => {
+    console.log("DELETE FUTURE TRIPS: ", req.query);
+    try {
+        let result = deleteFutureTrip(req.query.driverFbid, req.query.startTime);
+        res.json(result);
+    } catch (error) {
+        console.log("DELETE FUTURE TRIPS ERROR", error);
+        res.status(500).send(error);
     }
 });
 

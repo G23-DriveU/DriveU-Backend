@@ -60,6 +60,16 @@ const findFutureTrips = async (driverFbid) => {
     return result;
 }
 
+const deleteFutureTrip = async (driverFbid, startTime) => {
+    driverId = (await findUser(driverFbid)).id;
+    let query = {
+        text: 'DELETE FROM future_trips WHERE driver_id = $1 AND start_time = $2',
+        values: [driverId, startTime],
+    };
+    let result = await client.query(query);
+    return result;
+}
+
 const findRiderTrips = async (firebase_uid) => {    
     let query = {
         text: 'SELECT * FROM trips WHERE rider_id = $1',
@@ -172,4 +182,4 @@ client.connect()
         console.log('Error connecting to PostgreSQL or creating tables:', error);
     });
 
-module.exports = { client, doesUserExist, insertUser, findUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips };
+module.exports = { client, doesUserExist, insertUser, findUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, deleteFutureTrip };
