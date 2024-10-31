@@ -1,11 +1,14 @@
 /*
+This is the server.js file and runs the backend server for DriveU.
+
 After login, userId from Postgres will be used, NOT firebase_uid
 
 TODO
-ADD different responses to ride request (accept and delete)
+ADD different responses to ride request (accept and reject)
 fix trip database entries and include transitioning to trip
-fix trip route to find all past trips
+fix trip view to find all past trips
 Add notification functionality for ride requests to driver when submitted
+notify riders when future trip is deleted
 Incorporate paypal and cost functionality to ride requests
 add update device id functionality when logging in mobile app
 add edit user info functionality and profile pic functionality
@@ -13,20 +16,23 @@ add find future_trips functionality for riders (dont pull up trips where they ar
 automatically cancel future trips 30 mins after and send notis to driver 5 mins before??
 */
 
+//Necessary imports are handled for server.js.
 const express = require('express');
-const { client, doesUserExist, insertUser, findUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, deleteFutureTrip, insertRideRequest } = require('./database'); // Import the client from database.js
+const { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequestsForTrip, findRideRequestsForRider } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
 const RideRequest = require('./RideRequest');
 
+//The express app is created and the port is set to 8080.
 const app = express();
 const port = 8080;
 
+//GET users will take in firebaseUid and send user info from database to client.
 app.get('/users', async (req, res) => {
     console.log("GET USERS: ", req.query);
     try {
-        let result = await findUser(req.query.firebase_uid)
+        let result = await findUser(req.query.firebaseUid)
         res.json(result);
     } catch (error) {
         console.log("GET USER ERROR", error);
@@ -34,16 +40,19 @@ app.get('/users', async (req, res) => {
     }
 });
 
+//POST users will take in user info and insert into database, sending database response back to client.
 app.post('/users', async (req, res) => {
     console.log("POST USERS: ", req.query);
 
+    //User object is created based on if user is a driver.
     let curUser = null;
     if (req.query.driver == 'true') curUser = new Driver(req.query);
     else curUser = new User(req.query);
 
     try {
-        if (await doesUserExist(curUser.firebase_uid) == false) {
-            result = insertUser(curUser);
+        //If the user does not exist, it is inserted into the database.
+        if (await doesUserExist(curUser.firebaseUid) == false) {
+            result = await insertUser(curUser);
             res.status(201).json(result);
         }
         else {
@@ -82,6 +91,7 @@ app.get('/trips', async (req, res) => {
     }
 });
 
+//GET futureTrips will take in driverId and send all future trips for that driver to client.
 app.get('/futureTrips', async (req, res) => {
     console.log("GET FUTURE TRIPS: ", req.query);
     try {
@@ -93,15 +103,19 @@ app.get('/futureTrips', async (req, res) => {
     }
 });
 
+//POST futureTrips will take in future trip info and insert into database, sending database response back to client.
 app.post('/futureTrips', async (req, res) => {
     console.log("POST FUTURE TRIPS: ", req.query);
     try {
+        //The FutureTrip object is created.
         let newTrip = await FutureTrip.createFutureTrip(req.query);
+
+        //Other FutureTrips for the driver are found.
         let prevFutureTrips = await findFutureTrips(newTrip.driverId);
         prevFutureTripsCount = prevFutureTrips.rowCount;
         prevFutureTrips = prevFutureTrips.rows;
         
-        //check for overlapping future trips before adding new future trip
+        //If the driver has overlapping future trips, a 409 error is sent.
         for (let i = 0; i < prevFutureTripsCount; i++) {
             if (prevFutureTrips[i].start_time <= newTrip.eta && prevFutureTrips[i].eta >= newTrip.startTime) {
                 console.log("Overlapping future trips");
@@ -110,10 +124,11 @@ app.post('/futureTrips', async (req, res) => {
             }
         }
 
+        //The new FutureTrip is inserted into the database.
         result = await insertFutureTrip(newTrip);
         res.status(201).json(result);
     } catch (error) {
-        //catches invalid routes or addresses
+        //The error is caught if there is an error in the API response.
         if (error.toString().trim() == "Error: Error in API response") {
             res.status(404).send('No route found');
         }
@@ -124,11 +139,11 @@ app.post('/futureTrips', async (req, res) => {
     }
 });
 
-//Deletes based on driverId and startTime since no overlap (startTimes are unique for each driver)
+//DELETE futureTrips will take in futureTripId and delete the future trip from the database.
 app.delete('/futureTrips', async (req, res) => {
     console.log("DELETE FUTURE TRIPS: ", req.query);
     try {
-        let result = deleteFutureTrip(req.query.futureTripId);
+        let result = await deleteFutureTrip(req.query.futureTripId);
         res.json(result);
     } catch (error) {
         console.log("DELETE FUTURE TRIPS ERROR", error);
@@ -136,10 +151,11 @@ app.delete('/futureTrips', async (req, res) => {
     }
 });
 
-app.get('/rideRequests', async (req, res) => {
-    console.log("GET RIDE REQUESTS: ", req.query);
+//GET rideRequestsForTrip will take in futureTripId and send all ride requests for that trip to client.
+app.get('/rideRequestsForTrip', async (req, res) => {
+    console.log("GET RIDE REQUESTS FOR TRIP: ", req.query);
     try {
-        let result = await findRideRequests(req.query.futureTripId);
+        let result = await findRideRequestsForTrip(req.query.futureTripId);
         res.json(result);
     } catch (error) {
         console.log("GET RIDE REQUESTS ERROR", error);
@@ -147,6 +163,19 @@ app.get('/rideRequests', async (req, res) => {
     }
 });
 
+//GET rideRequestsForRider will take in riderId and send all ride requests for that rider to client.
+app.get('/rideRequestsForRider', async (req, res) => {
+    console.log("GET RIDE REQUESTS FOR RIDER: ", req.query);
+    try {
+        let result = await findRideRequestsForRider(req.query.riderId);
+        res.json(result);
+    } catch (error) {
+        console.log("GET RIDE REQUESTS ERROR", error);
+        res.status(500).send(error);
+    }
+});
+
+//POST rideRequests will take in ride request info and insert into database, sending database response back to client.
 app.post('/rideRequests', async (req, res) => {
     console.log("POST RIDE REQUESTS: ", req.query);
     try {
@@ -155,9 +184,14 @@ app.post('/rideRequests', async (req, res) => {
         result = await insertRideRequest(newRideRequest);
         res.status(201).json(result);
     } catch (error) {
+        //The error is caught if the rider has already requested a ride.
         if (error.toString().trim() == "Error: Rider already requested ride") {
             res.status(409).send('Rider already requested ride');
             return;
+        }
+        //The error is caught if there is an error in the API response.
+        if (error.toString().trim() == "Error: Error in API response") {
+            res.status(404).send('No route found');
         }
         console.log("POST RIDE REQUESTS ERROR", error);
         res.status(500).send(error);
@@ -229,7 +263,7 @@ app.post('/trips', async (req, res) => {
     }
 });
 
-// Start the server
+//The server is started.
 app.listen(port, (error) => {
     if (error) {
         console.log('Something went wrong', error);

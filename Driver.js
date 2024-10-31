@@ -1,17 +1,21 @@
+//This class is used to create a driver object that will be stored in the database.
+
+//Necessary imports from ./User are included.
 const User = require('./User');
 
+//The Driver class is defined.
 class Driver extends User {
+    //The constructor takes in the request body and initializes the object with the provided values.
     constructor(reqBody) {
         super(reqBody);
-
-        this.car_color = reqBody.car_color;
-        this.car_plate = reqBody.car_plate;
-        this.car_make = reqBody.car_make;
-        this.car_model = reqBody.car_model;
-        this.car_capacity = reqBody.car_capacity;
-        this.car_mpg = reqBody.car_mpg;
-        this.paypal_email = reqBody.paypal_email;
+        this.carColor = reqBody.carColor;
+        this.carPlate = reqBody.carPlate;
+        this.carMake = reqBody.carMake;
+        this.carModel = reqBody.carModel;
+        this.carCapacity = reqBody.carCapacity;
+        this.carMpg = reqBody.carMpg;
     }
 }
 
+//The Driver class is exported.
 module.exports = Driver;
