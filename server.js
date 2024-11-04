@@ -17,16 +17,27 @@ automatically cancel future trips 30 mins after and send notis to driver 5 mins 
 */
 
 //Necessary imports are handled for server.js.
+require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
 const { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequestsForTrip, findRideRequestsForRider } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
 const RideRequest = require('./RideRequest');
+const paypal = require('./paypal')
 
 //The express app is created and the port is set to 8080.
 const app = express();
 const port = 8080;
+
+//initialize session to store user specific data (temporary solution)
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false }
+}));
 
 //GET users will take in firebaseUid and send user info from database to client.
 app.get('/users', async (req, res) => {
@@ -262,6 +273,69 @@ app.post('/trips', async (req, res) => {
         res.status(500).send(error);
     }
 });
+
+//PAYPAL FUNCTIONALITY
+//The server will redirect to the paypal payment page.
+app.get('/pay', async (req, res) => {
+    try {
+        const url = await paypal.createOrder()
+        res.send(url)
+    } catch (e) { 
+        res.status(500).send('Internal Server Error')
+    }
+})
+
+//The server will redirect to the paypal approval page.
+//Triggered automatically via createOrder returnUrl
+app.get('/authorize-order', async (req, res) => {
+    try {
+        const orderId = req.query.token
+        req.session.orderId = orderId; // Store order ID in session
+        const authorizationID = await paypal.authorizeOrder(orderId)
+        req.session.authorizationID = authorizationID
+        console.log('Authorization ID:', authorizationID);
+        res.redirect(process.env.BASE_URL + '/after-approval')
+        //res.send('Order authorized. You can now capture the payment.');
+    } catch (e) {
+        res.status(500).send('Error: ' + e)
+    }
+})
+
+//
+app.get('/after-approval', (req, res) => {
+    res.send("Payment approved")
+})
+
+//The server will capture the payment and send the payment to the driver.
+app.post('/capture-payment', async (req, res) => {
+    try {
+        //console.log('Session data:', req.session);
+        //const orderId = req.session.authorizationID; // Retrieve order ID from session
+        const orderId = req.query.orderId; // Retrieve order ID from session
+        if (!orderId) {
+            return res.status(400).send('No order ID found in session.');
+        }
+        //res.send('orderID: ' + orderId)
+
+        const response = await paypal.capturePayment(orderId)
+        if (response.status !== 'COMPLETED') {
+            orderId = await paypal.reauthorizeOrder(orderId)
+            const response = await paypal.capturePayment(orderId)
+        }
+        //console.log('Capture response:', response);
+        const amountReceived = response.seller_receivable_breakdown.net_amount.value
+        console.log('Amount received:', amountReceived);
+        paypal.createPayout('sb-driver5033257492@personal.example.com', amountReceived-process.env.PAYPAL_PAYOUT_FEE)
+        res.send('Payment successful')
+    } catch (e) {
+        res.status(500).send('Error: ' + e);
+    }
+});
+
+app.get('/cancel-order', (req, res) => {
+    console.log('Order canceled');
+    //res.redirect('/')
+})
 
 //The server is started.
 app.listen(port, (error) => {
