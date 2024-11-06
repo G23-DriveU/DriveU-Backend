@@ -20,7 +20,7 @@ automatically cancel future trips 30 mins after and send notis to driver 5 mins 
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequestsForTrip, findRideRequestsForRider } = require('./database');
+const { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateDeviceId } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
@@ -43,7 +43,10 @@ app.use(session({
 app.get('/users', async (req, res) => {
     console.log("GET USERS: ", req.query);
     try {
-        let result = await findUser(req.query.firebaseUid)
+        let result = {};
+        result.deviceId = await updateDeviceId(req.query.firebaseUid, req.query.deviceId);
+        result.user = await findUser(req.query.firebaseUid)
+        
         res.json(result);
     } catch (error) {
         console.log("GET USER ERROR", error);
@@ -191,7 +194,9 @@ app.post('/rideRequests', async (req, res) => {
     console.log("POST RIDE REQUESTS: ", req.query);
     try {
         let newRideRequest = await RideRequest.createRideRequest(req.query);
-        //SEND NOTIFICATION TO DRIVER
+
+        //SEND NOTIFICATION TO DRIVER============================================================
+
         result = await insertRideRequest(newRideRequest);
         res.status(201).json(result);
     } catch (error) {
@@ -205,6 +210,35 @@ app.post('/rideRequests', async (req, res) => {
             res.status(404).send('No route found');
         }
         console.log("POST RIDE REQUESTS ERROR", error);
+        res.status(500).send(error);
+    }
+});
+
+//DELETE rideRequestsByRider will take in rideRequestId and delete from database.
+app.delete('/rideRequestsByRider', async (req, res) => {
+    console.log("DELETE RIDE REQUEST BY RIDER: ", req.query);
+    try {
+        let result = await deleteRideRequest(req.query.rideRequestId);
+        res.status(201).json(result);
+    }
+    catch (error) {
+        console.log("DELETE RIDE REQUEST ERROR", error);
+        res.status(500).send(error);
+    }
+});
+
+//DELETE rideRequestsByDriver will take in rideRequestId, delete from database, and notify the rider.
+app.delete('/rideRequestsByDriver', async (req, res) => {
+    console.log("DELETE RIDE REQUEST BY DRIVER: ", req.query);
+    try {
+        let result = await deleteRideRequest(req.query.rideRequestId);
+
+        //SEND NOTIFICATION TO RIDER============================================================
+
+        res.status(201).json(result);
+    }
+    catch (error) {
+        console.log("DELETE RIDE REQUEST ERROR", error);
         res.status(500).send(error);
     }
 });

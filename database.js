@@ -26,13 +26,13 @@ const doesUserExist = async (firebaseUid) => {
 const insertUser = async (curUser) => {
     let result = null;
     if (curUser.driver == true) {
-        result = await client.query('INSERT INTO users (firebase_uid, name, email, phone_number, school, driver, car_color, car_plate, car_make, car_model, car_capacity, car_mpg) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *', 
-            [curUser.firebaseUid, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.driver, curUser.carColor, curUser.carPlate, curUser.carMake, curUser.carModel, curUser.carCapacity, curUser.carMpg]);
+        result = await client.query('INSERT INTO users (firebase_uid, profile_image, name, email, phone_number, school, device_id, driver, car_color, car_plate, car_make, car_model, car_capacity, car_mpg) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *', 
+            [curUser.firebaseUid, curUser.profileImage, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.deviceId, curUser.driver, curUser.carColor, curUser.carPlate, curUser.carMake, curUser.carModel, curUser.carCapacity, curUser.carMpg]);
     }
     else {
         //The user is inserted without car details if they are not a driver.
-        result = await client.query('INSERT INTO users (firebase_uid, name, email, phone_number, school, driver) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', 
-            [curUser.firebaseUid, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.driver]);
+        result = await client.query('INSERT INTO users (firebase_uid, profile_image, name, email, phone_number, school, device_id, driver) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *', 
+            [curUser.firebaseUid, curUser.profileImage, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.deviceId, curUser.driver]);
     }
     return result;
 }
@@ -47,6 +47,16 @@ const findUser = async (firebaseUid) => {
     return result.rows[0];
 }
 
+//The updateDeviceId function updates the device ID of a user in the database.
+const updateDeviceId = async (firebaseUid, deviceId) => {
+    let query = {
+        text: 'UPDATE users SET device_id = $1 WHERE firebase_uid = $2',
+        values: [deviceId, firebaseUid],
+    };
+    let result = await client.query(query);
+    return result;
+}
+
 //The findUserById function retrieves a user object from the database based on the user ID.
 const findUserById = async (userId) => {
     let query = {
@@ -59,8 +69,8 @@ const findUserById = async (userId) => {
 
 //The insertTestData function inserts a futureTrip object into the database.
 const insertFutureTrip = async (newTrip) => {
-    let result = await client.query('INSERT INTO future_trips (driver_id, start_location, destination, start_time, eta, distance, avoid_highways, avoid_tolls, is_full) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-        [newTrip.driverId, newTrip.startLocation, newTrip.destination, newTrip.startTime, newTrip.eta, newTrip.distance, newTrip.avoidHighways, newTrip.avoidTolls, false]);
+    let result = await client.query('INSERT INTO future_trips (driver_id, start_location, destination, start_time, eta, distance, avoid_highways, avoid_tolls, round_trip, is_full) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+        [newTrip.driverId, newTrip.startLocation, newTrip.destination, newTrip.startTime, newTrip.eta, newTrip.distance, newTrip.avoidHighways, newTrip.avoidTolls, newTrip.roundTrip, false]);
     return result;
 }
 
@@ -145,6 +155,15 @@ const findRideRequestsForRider = async (riderId) => {
     return result;
 }
 
+const deleteRideRequest = async (rideRequestId) => {
+    let query = {
+        text: 'DELETE FROM ride_requests WHERE id = $1',
+        values: [rideRequestId],
+    };
+    let result = await client.query(query);
+    return result;
+}
+
 //NOT WORKING
 const findRiderTrips = async (firebaseUid) => {    
     let query = {
@@ -221,6 +240,7 @@ client.connect()
                 distance FLOAT,
                 avoid_highways BOOLEAN,
                 avoid_tolls BOOLEAN,  
+                round_trip BOOLEAN,
                 is_full BOOLEAN,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
@@ -254,4 +274,4 @@ client.connect()
     });
 
 //The functions are exported for use in other files.
-module.exports = { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequestsForTrip, findRideRequestsForRider };
+module.exports = { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateDeviceId };

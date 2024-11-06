@@ -5,12 +5,16 @@ class User {
     //The constructor takes in the request body and initializes the object with the provided values.
     constructor(reqBody) {
         this.firebaseUid = reqBody.firebaseUid;
+
+        this.profileImage = null; //ADD BLOB PROFILE PIC =====================
+
+        this.deviceId = reqBody.deviceId;
         this.name = reqBody.name;
         this.email = reqBody.email;
         this.phoneNumber = reqBody.phoneNumber;
         this.school = reqBody.school;
         if (reqBody.driver == 'true') this.driver = true;
-        else  this.driver = false;
+        else this.driver = false;
     }
 }
 

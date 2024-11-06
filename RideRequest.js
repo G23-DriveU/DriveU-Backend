@@ -19,7 +19,9 @@ class RideRequest {
         this.riderId = reqBody.riderId;
         this.riderLocation = reqBody.riderLocation;
         this.status = "pending";
-        this.authorizationId = reqBody.authorizationId; //ASSUMING HANDLED ON FRONTEND
+
+        //this.authorizationId = //ADD AUTHORIZATION FROM PAYPAL CODE HERE ====================================
+
         if (reqBody.roundTrip == 'true') this.roundTrip = true;
         else this.roundTrip = false;
     }
@@ -84,6 +86,7 @@ class RideRequest {
 
     //This function prices the trip based on the extra distance and the driver's car's miles per gallon.
     async price(futureTrip) {
+        //gasCost = 3; //ADD GAS COST FROM API HERE ====================================
         let driver = await findUserById(futureTrip.driver_id);
         this.riderCost = (this.distance - futureTrip.distance) / parseInt(driver.car_mpg) * gasCost;
         if (this.roundTrip) this.riderCost *= 2;

@@ -19,6 +19,8 @@ class FutureTrip {
         else this.avoidHighways = false;
         if (reqBody.avoidTolls == 'true') this.avoidTolls = true;
         else this.avoidTolls = false;
+        if (reqBody.roundTrip == 'true') this.roundTrip = true;
+        else this.roundTrip = false;
     }
 
     //This function creates a new FutureTrip object and calls the getBestRoute function to get the best route from the start location to the destination.
