@@ -94,10 +94,23 @@ const findFutureTrip = async (futureTripId) => {
     return result.rows[0];
 }
 
+//The setFutureTripFull function updates the is_full attribute of a future trip to true.
+const setFutureTripFull = async (futureTripId) => {
+    let query = {
+        text: 'UPDATE future_trips SET is_full = $1 WHERE id = $2',
+        values: [true, futureTripId],
+    };
+    let result = await client.query(query);
+    return result;
+}
+
 //The deleteFutureTrip function deletes a future trip and all associated ride requests from the database.
 const deleteFutureTrip = async (futureTripId) => {
     let result = {};
-    //All ride requests associated with the trip are deleted. 
+
+    //NOTIFY USERS WITH RIDE REQUESTS THAT THE TRIP HAS BEEN DELETED=========================================
+
+    //All ride requests associated with the trip are deleted.
     let query = {
         text: 'DELETE FROM ride_requests WHERE future_trip_id = $1',
         values: [futureTripId],
@@ -119,6 +132,16 @@ const insertRideRequest = async (newRideRequest) => {
         [newRideRequest.futureTripId, newRideRequest.riderId, newRideRequest.riderLocation, newRideRequest.pickupTime, newRideRequest.riderCost, newRideRequest.driverPayout, newRideRequest.status, newRideRequest.distance, newRideRequest.roundTrip, newRideRequest.authorizationId]);
     return result;
 };
+
+//The findRideRequest function retrieves the ride request from the database based on the ride request ID.
+const findRideRequest = async (rideRequestId) => {
+    let query = {
+        text: 'SELECT * FROM ride_requests WHERE id = $1',
+        values: [rideRequestId],
+    };
+    let result = await client.query(query);
+    return result.rows[0];
+}
 
 //The findRideRequestsForTrip function retrieves all ride requests for a given future trip ID.
 const findRideRequestsForTrip = async (futureTripId) => {
@@ -155,6 +178,17 @@ const findRideRequestsForRider = async (riderId) => {
     return result;
 }
 
+//The acceptRideRequest function updates the status of a ride request to 'accepted'.
+const acceptRideRequest = async (rideRequestId) => {
+    let query = {
+        text: 'UPDATE ride_requests SET status = $1 WHERE id = $2',
+        values: ['accepted', rideRequestId],
+    };
+    let result = await client.query(query);
+    return result;
+}
+
+//The deleteRideRequest function deletes a ride request from the database.
 const deleteRideRequest = async (rideRequestId) => {
     let query = {
         text: 'DELETE FROM ride_requests WHERE id = $1',
@@ -274,4 +308,4 @@ client.connect()
     });
 
 //The functions are exported for use in other files.
-module.exports = { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateDeviceId };
+module.exports = { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateDeviceId, acceptRideRequest };

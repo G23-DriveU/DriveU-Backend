@@ -4,13 +4,11 @@ This is the server.js file and runs the backend server for DriveU.
 After login, userId from Postgres will be used, NOT firebase_uid
 
 TODO
-ADD different responses to ride request (accept and reject)
 fix trip database entries and include transitioning to trip
 fix trip view to find all past trips
-Add notification functionality for ride requests to driver when submitted
-notify riders when future trip is deleted
+Add notification functionality
+notify riders when future trip is deleted, and when ride request is rejected
 Incorporate paypal and cost functionality to ride requests
-add update device id functionality when logging in mobile app
 add edit user info functionality and profile pic functionality
 add find future_trips functionality for riders (dont pull up trips where they are driver)
 automatically cancel future trips 30 mins after and send notis to driver 5 mins before??
@@ -20,7 +18,7 @@ automatically cancel future trips 30 mins after and send notis to driver 5 mins 
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateDeviceId } = require('./database');
+const { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateDeviceId, acceptRideRequest } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
@@ -214,6 +212,45 @@ app.post('/rideRequests', async (req, res) => {
     }
 });
 
+//PUT acceptRideRequest will take in rideRequestId and check for overlapping accepted ride requests, then accept the ride request and set the future trip to full, finally sending a notification to the rider.
+app.put('/acceptRideRequest', async (req, res) => {
+    console.log("PUT ACCEPT RIDE REQUEST: ", req.query);
+    try {
+        //The ride request and future trip are found.
+        let rideRequest = await findRideRequest(req.query.rideRequestId);
+        let futureTrip = await findFutureTrip(rideRequest.future_trip_id);
+
+        //The existing ride requests for the rider are found.
+        let prevRideRequests = await  findRideRequestsForRider(rideRequest.rider_id);
+        let prevRideRequestsCount = prevRideRequests.rowCount;
+        prevRideRequests = prevRideRequests.rows;
+        
+        //If the rider has overlapping ride requests, a 409 error is sent.
+        for (let i = 0; i < prevRideRequestsCount; i++) {
+            if  (prevRideRequests[i].future_trip_id == futureTrip.id) {
+                continue;
+            }
+            if (prevRideRequests[i].futureTrip.start_time <= futureTrip.eta && prevRideRequests[i].futureTrip.eta >= futureTrip.start_time && prevRideRequests[i].status != "pending") {
+                console.log("Overlapping ride requests");
+                res.status(409).send('Overlapping ride requests');
+                return;
+            }
+        }
+
+        //The ride request is accepted and the future trip is set to full.
+        let result = {};
+        result.rideRequest = await acceptRideRequest(req.query.rideRequestId);
+        result.futureTrip = await setFutureTripFull(futureTrip.id);
+
+        //SEND NOTIFICATION TO RIDER============================================================
+
+        res.status(201).json(result);
+    } catch (error) {
+        console.log("ACCEPT RIDE REQUEST ERROR", error);
+        res.status(500).send(error);
+    }
+});
+
 //DELETE rideRequestsByRider will take in rideRequestId and delete from database.
 app.delete('/rideRequestsByRider', async (req, res) => {
     console.log("DELETE RIDE REQUEST BY RIDER: ", req.query);
@@ -227,7 +264,7 @@ app.delete('/rideRequestsByRider', async (req, res) => {
     }
 });
 
-//DELETE rideRequestsByDriver will take in rideRequestId, delete from database, and notify the rider.
+//DELETE rideRequestsByDriver (reject) will take in rideRequestId, delete from database, and notify the rider.
 app.delete('/rideRequestsByDriver', async (req, res) => {
     console.log("DELETE RIDE REQUEST BY DRIVER: ", req.query);
     try {
