@@ -6,8 +6,8 @@ After login, userId from Postgres will be used, NOT firebase_uid
 TODO
 fix trip database entries and include transitioning to trip
 fix trip view to find all past trips
+add return time for round trips
 Add notification functionality
-notify riders when future trip is deleted, and when ride request is rejected
 Incorporate paypal and cost functionality to ride requests
 add edit user info functionality and profile pic functionality
 add find future_trips functionality for riders (dont pull up trips where they are driver)
@@ -27,7 +27,7 @@ const paypal = require('./paypal')
 
 //The express app is created and the port is set to 8080.
 const app = express();
-const port = 8080;
+const port = process.env.PORT || 8080;
 
 //initialize session to store user specific data (temporary solution)
 app.use(session({
