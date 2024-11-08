@@ -2,14 +2,15 @@
 
 //Necessary imports from pg are included.
 const { Client } = require('pg');
+require('dotenv').config();
 
 //The PostgreSQL client is initialized with the connection details.
 const client = new Client({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'postgres',
-    password: 'postgres',
-    port: 5432,
+    user: process.env.PGUSER,
+    host: process.env.PGHOST,
+    database: process.env.PGDATABASE,
+    password: process.env.PGPASSWORD,
+    port: process.env.PGPORT,
 });
 
 //The doesUserExist function checks if a user with the given Firebase UID exists in the database.
