@@ -37,6 +37,10 @@ app.use(session({
     cookie: { secure: false }
 }));
 
+app.get('/', (req, res) => {
+    res.send('Welcome to DriveU!')
+});
+
 //GET users will take in firebaseUid and send user info from database to client.
 app.get('/users', async (req, res) => {
     console.log("GET USERS: ", req.query);
