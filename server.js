@@ -37,6 +37,7 @@ app.use(session({
     cookie: { secure: false }
 }));
 
+//A generic welcome message is sent to the client.
 app.get('/', (req, res) => {
     res.send('Welcome to DriveU!')
 });

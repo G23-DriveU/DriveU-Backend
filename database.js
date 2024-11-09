@@ -230,7 +230,7 @@ client.connect()
                 profile_image BYTEA,
                 name VARCHAR(100),
                 email VARCHAR(100) UNIQUE NOT NULL,
-                phone_number VARCHAR(20) UNIQUE,
+                phone_number VARCHAR(20),
                 school VARCHAR(100),
                 device_id VARCHAR(64),
                 driver BOOLEAN,
