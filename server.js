@@ -281,6 +281,7 @@ app.post('/rideRequests', async (req, res) => {
             response.status = "ERROR";
             response.error = "No route found";
             res.status(404).json(response);
+            return;
         }
         response.status = "ERROR";
         response.error = error.toString();
