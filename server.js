@@ -53,7 +53,7 @@ app.get('/users', async (req, res) => {
         res.json(response);
     } catch (error) {
         response.status = "ERROR";
-        response.error = error;
+        response.error = error.toString();
         console.log("GET USER ERROR", error);
         res.status(500).json(response);
     }
@@ -92,7 +92,7 @@ app.post('/users', async (req, res) => {
         }
     } catch (error) {
         response.status = "ERROR";
-        response.error = error;
+        response.error = error.toString();
         console.log("POST USER ERROR: ", error);
         res.status(500).json(response);
     }
@@ -138,7 +138,7 @@ app.get('/futureTrips', async (req, res) => {
         res.json(response);
     } catch (error) {  
         response.status = "ERROR";
-        response.error = error;
+        response.error = error.toString();
         console.log("GET FUTURE TRIPS ERROR", error)
         res.status(500).json(response);
     }
@@ -189,7 +189,7 @@ app.post('/futureTrips', async (req, res) => {
         }
         else {
             response.status = "ERROR";
-            response.error = error;
+            response.error = error.toString();
             console.log("POST FUTURE TRIPS ERROR", error);
             res.status(500).json(response);
         }
@@ -206,7 +206,7 @@ app.delete('/futureTrips', async (req, res) => {
         res.json(response);
     } catch (error) {
         response.status = "ERROR";
-        response.error = error;
+        response.error = error.toString();
         console.log("DELETE FUTURE TRIPS ERROR", error);
         res.status(500).json(response);
     }
@@ -224,7 +224,7 @@ app.get('/rideRequestsForTrip', async (req, res) => {
         res.json(response);
     } catch (error) {
         response.status = "ERROR";
-        response.error = error;
+        response.error = error.toString();
         console.log("GET RIDE REQUESTS ERROR", error);
         res.status(500).json(response);
     }
@@ -242,7 +242,7 @@ app.get('/rideRequestsForRider', async (req, res) => {
         res.json(response);
     } catch (error) {
         response.status = "ERROR";
-        response.error = error;
+        response.error = error.toString();
         console.log("GET RIDE REQUESTS ERROR", error);
         res.status(500).json(response);
     }
@@ -283,7 +283,7 @@ app.post('/rideRequests', async (req, res) => {
             res.status(404).json(response);
         }
         response.status = "ERROR";
-        response.error = error;
+        response.error = error.toString();
         console.log("POST RIDE REQUESTS ERROR", error);
         res.status(500).json(response);
     }
@@ -345,7 +345,7 @@ app.put('/acceptRideRequest', async (req, res) => {
         res.status(201).json(response);
     } catch (error) {
         response.status = "ERROR";
-        response.error = error;
+        response.error = error.toString();
         console.log("ACCEPT RIDE REQUEST ERROR", error);
         res.status(500).json(response);
     }
@@ -362,7 +362,7 @@ app.delete('/rideRequestsByRider', async (req, res) => {
     }
     catch (error) {
         response.status = "ERROR";
-        response.error = error;
+        response.error = error.toString();
         console.log("DELETE RIDE REQUEST ERROR", error);
         res.status(500).json(response);
     }
@@ -382,7 +382,7 @@ app.delete('/rideRequestsByDriver', async (req, res) => {
     }
     catch (error) {
         response.status = "ERROR";
-        response.error = error;
+        response.error = error.toString();
         console.log("DELETE RIDE REQUEST ERROR", error);
         res.status(500).json(response);
     }
