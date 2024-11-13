@@ -23,7 +23,8 @@ const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
 const RideRequest = require('./RideRequest');
-const paypal = require('./paypal')
+const paypal = require('./paypal');
+const carStats = require('./carStats');
 
 //The express app is created and the port is set to 8080.
 const app = express();
@@ -514,10 +515,34 @@ app.post('/capture-payment', async (req, res) => {
     }
 });
 
+// not done
 app.get('/cancel-order', (req, res) => {
     console.log('Order canceled');
     //res.redirect('/')
 })
+
+// API endpoint to get all car makes
+app.get('/api/car-makes', async (req, res) => {
+    try {
+      const makes = await carStats.getAllCarMakes();
+      res.json(makes);
+    } catch (error) {
+      console.error('Error fetching car makes:', error);
+      res.status(500).json({ error: 'Error fetching car makes' });
+    }
+});
+  
+// API endpoint to get models for a specific make
+app.get('/api/car-makes/:make/models', async (req, res) => {
+    try {
+      const make = req.query.make;
+      const models = await carStats.getModelsForMake(make);
+      res.json(models);
+    } catch (error) {
+      console.error(`Error fetching models for make ${make}:`, error);
+      res.status(500).json({ error: `Error fetching models for make ${make}` });
+    }
+});
 
 //The server is started.
 app.listen(port, (error) => {
