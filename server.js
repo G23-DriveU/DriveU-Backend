@@ -154,7 +154,7 @@ app.get('/futureTripsForRider', async (req, res) => {
         response.count = result.rowCount;
         response.items = result.rows;
         for (let i = 0; i < response.items.length; i++) {
-            response.items[i].driver = await findUser(response.items[i].driverId);
+            response.items[i].driver = await findUser(response.items[i].driver_id);
         }
         response.status = "OK";
         res.json(response);

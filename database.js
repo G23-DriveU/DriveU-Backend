@@ -91,7 +91,7 @@ const findFutureTripsForDriver = async (driverId) => {
 //The findFutureTripsForRider function retrieves all future trips besides the ones where the rider is the driver.
 const findFutureTripsForRider = async (riderId) => {
     let query = {
-        text: 'SELECT * FROM future_trips WHERE id <> $1 AND is_full = false',
+        text: 'SELECT * FROM future_trips WHERE driver_id <> $1 AND is_full = false',
         values: [riderId],
     };
     let result = await client.query(query);
