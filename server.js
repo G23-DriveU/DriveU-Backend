@@ -41,6 +41,7 @@ app.use(session({
 //A generic welcome message is sent to the client.
 app.get('/', (req, res) => {
     res.send('Welcome to DriveU!')
+    console.log("pinged");
 });
 
 //GET users will take in firebaseUid and send user info from database to client.
