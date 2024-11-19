@@ -11,6 +11,9 @@ const client = new Client({
     database: process.env.PGDATABASE,
     password: process.env.PGPASSWORD,
     port: process.env.PGPORT,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
 //The doesUserExist function checks if a user with the given Firebase UID exists in the database.
@@ -75,11 +78,21 @@ const insertFutureTrip = async (newTrip) => {
     return result;
 }
 
-//The findFutureTrips function retrieves all future trips for a given user ID of the driver.
-const findFutureTrips = async (driverId) => {
+//The findFutureTripsForDriver function retrieves all future trips for a given user ID of the driver.
+const findFutureTripsForDriver = async (driverId) => {
     let query = {
         text: 'SELECT * FROM future_trips WHERE driver_id = $1',
         values: [driverId],
+    };
+    let result = await client.query(query);
+    return result;
+}
+
+//The findFutureTripsForRider function retrieves all future trips besides the ones where the rider is the driver.
+const findFutureTripsForRider = async (riderId) => {
+    let query = {
+        text: 'SELECT * FROM future_trips WHERE id <> $1 AND is_full = false',
+        values: [riderId],
     };
     let result = await client.query(query);
     return result;
@@ -309,4 +322,4 @@ client.connect()
     });
 
 //The functions are exported for use in other files.
-module.exports = { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateDeviceId, acceptRideRequest };
+module.exports = { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateDeviceId, acceptRideRequest };

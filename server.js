@@ -10,7 +10,7 @@ add return time for round trips
 Add notification functionality
 Incorporate paypal and cost functionality to ride requests
 add edit user info functionality and profile pic functionality
-add find future_trips functionality for riders (dont pull up trips where they are driver)
+update finding future trips for rider
 automatically cancel future trips 30 mins after and send notis to driver 5 mins before??
 */
 
@@ -18,7 +18,7 @@ automatically cancel future trips 30 mins after and send notis to driver 5 mins 
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTrips, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateDeviceId, acceptRideRequest } = require('./database');
+const { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateDeviceId, acceptRideRequest } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
@@ -127,12 +127,12 @@ app.get('/trips', async (req, res) => {
 });
 */
 
-//GET futureTrips will take in driverId and send all future trips for that driver to client.
-app.get('/futureTrips', async (req, res) => {
-    console.log("GET FUTURE TRIPS: ", req.query);
+//GET futureTripsForDriver will take in driverId and send all future trips for that driver to client.
+app.get('/futureTripsForDriver', async (req, res) => {
+    console.log("GET FUTURE TRIPS FOR DRIVER: ", req.query);
     let response = {};
     try {
-        let result = await findFutureTrips(req.query.driverId);
+        let result = await findFutureTripsForDriver(req.query.driverId);
         response.count = result.rowCount;
         response.items = result.rows;
         response.status = "OK";
@@ -140,10 +140,32 @@ app.get('/futureTrips', async (req, res) => {
     } catch (error) {  
         response.status = "ERROR";
         response.error = error.toString();
-        console.log("GET FUTURE TRIPS ERROR", error)
+        console.log("GET FUTURE TRIPS FOR DRIVER ERROR", error)
         res.status(500).json(response);
     }
 });
+
+//GET futureTripsForRider will take in riderId and send all future trips to client (not including trips they may be driving).
+app.get('/futureTripsForRider', async (req, res) => {
+    console.log("GET FUTURE TRIPS FOR RIDER: ", req.query);
+    let response = {};
+    try {
+        let result = await findFutureTripsForRider(req.query.riderId);
+        response.count = result.rowCount;
+        response.items = result.rows;
+        for (let i = 0; i < response.items.length; i++) {
+            response.items[i].driver = await findUser(response.items[i].driverId);
+        }
+        response.status = "OK";
+        res.json(response);
+    } catch (error) {  
+        response.status = "ERROR";
+        response.error = error.toString();
+        console.log("GET FUTURE TRIPS FOR RIDER ERROR", error)
+        res.status(500).json(response);
+    }
+});
+
 
 //POST futureTrips will take in future trip info and insert into database, sending database response back to client.
 app.post('/futureTrips', async (req, res) => {
@@ -154,7 +176,7 @@ app.post('/futureTrips', async (req, res) => {
         let newTrip = await FutureTrip.createFutureTrip(req.query);
 
         //Other FutureTrips for the driver are found.
-        let prevFutureTrips = await findFutureTrips(newTrip.driverId);
+        let prevFutureTrips = await findFutureTripsForDriver(newTrip.driverId);
         prevFutureTripsCount = prevFutureTrips.rowCount;
         prevFutureTrips = prevFutureTrips.rows;
         
