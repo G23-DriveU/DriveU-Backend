@@ -30,13 +30,13 @@ const doesUserExist = async (firebaseUid) => {
 const insertUser = async (curUser) => {
     let result = null;
     if (curUser.driver == true) {
-        result = await client.query('INSERT INTO users (firebase_uid, profile_image, name, email, phone_number, school, device_id, driver, car_color, car_plate, car_make, car_model, car_capacity, car_mpg) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *', 
-            [curUser.firebaseUid, curUser.profileImage, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.deviceId, curUser.driver, curUser.carColor, curUser.carPlate, curUser.carMake, curUser.carModel, curUser.carCapacity, curUser.carMpg]);
+        result = await client.query('INSERT INTO users (firebase_uid, profile_image, name, email, phone_number, school, driver, car_color, car_plate, car_make, car_model, car_capacity, car_mpg) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *', 
+            [curUser.firebaseUid, curUser.profileImage, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.driver, curUser.carColor, curUser.carPlate, curUser.carMake, curUser.carModel, curUser.carCapacity, curUser.carMpg]);
     }
     else {
         //The user is inserted without car details if they are not a driver.
-        result = await client.query('INSERT INTO users (firebase_uid, profile_image, name, email, phone_number, school, device_id, driver) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *', 
-            [curUser.firebaseUid, curUser.profileImage, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.deviceId, curUser.driver]);
+        result = await client.query('INSERT INTO users (firebase_uid, profile_image, name, email, phone_number, school, driver) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *', 
+            [curUser.firebaseUid, curUser.profileImage, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.driver]);
     }
     return result;
 }
@@ -241,20 +241,20 @@ client.connect()
                 id SERIAL PRIMARY KEY,
                 firebase_uid VARCHAR(128) UNIQUE NOT NULL,
                 profile_image BYTEA,
-                name VARCHAR(100),
-                email VARCHAR(100) UNIQUE NOT NULL,
-                phone_number VARCHAR(20),
+                name VARCHAR(128),
+                email VARCHAR(128) UNIQUE NOT NULL,
+                phone_number VARCHAR(32),
                 school VARCHAR(100),
-                device_id VARCHAR(64),
+                fcm_token VARCHAR(256),
                 driver BOOLEAN,
                 driver_rating FLOAT DEFAULT 0,
                 driver_review_count INTEGER DEFAULT 0,
                 rider_rating FLOAT DEFAULT 0,
                 rider_review_count INTEGER DEFAULT 0,
-                car_color VARCHAR(100),
-                car_plate VARCHAR(100),
-                car_make VARCHAR(100),
-                car_model VARCHAR(100),
+                car_color VARCHAR(128),
+                car_plate VARCHAR(128),
+                car_make VARCHAR(128),
+                car_model VARCHAR(128),
                 car_capacity INTEGER,
                 car_mpg FLOAT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -265,12 +265,21 @@ client.connect()
                 id SERIAL PRIMARY KEY,
                 driver_id INTEGER REFERENCES users(id),
                 rider_id INTEGER REFERENCES users(id),
-                start_location VARCHAR(100),
-                rider_location VARCHAR(100),
-                destination VARCHAR(100),
-                started_at TIMESTAMP,
-                ended_at TIMESTAMP,
+                start_location VARCHAR(128),
+                start_location_lat FLOAT,
+                start_location_lng FLOAT,
+                rider_location VARCHAR(128),
+                rider_location_lat FLOAT,
+                rider_location_lng FLOAT,
+                destination VARCHAR(128),
+                destination_lat FLOAT,
+                destination_lng FLOAT,
+                started_at BIGINT,
+                picked_up_at BIGINT,
+                arrived_at BIGINT,
                 round_trip BOOLEAN,
+                dropped_off_at BIGINT,
+                ended_at BIGINT,
                 driver_payout FLOAT,
                 rider_cost FLOAT,
                 distance FLOAT,
@@ -281,8 +290,12 @@ client.connect()
             CREATE TABLE IF NOT EXISTS future_trips (
                 id SERIAL PRIMARY KEY,
                 driver_id INTEGER REFERENCES users(id),
-                start_location VARCHAR(100),
-                destination VARCHAR(100),
+                start_location VARCHAR(128),
+                start_location_lat FLOAT,
+                start_location_lng FLOAT,
+                destination VARCHAR(128),
+                destination_lat FLOAT,
+                destination_lng FLOAT,
                 start_time BIGINT,
                 eta BIGINT,
                 distance FLOAT,
@@ -290,6 +303,7 @@ client.connect()
                 avoid_tolls BOOLEAN,  
                 round_trip BOOLEAN,
                 is_full BOOLEAN,
+                ets BIGINT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `;
@@ -299,12 +313,15 @@ client.connect()
                 future_trip_id INTEGER REFERENCES future_trips(id),
                 rider_id INTEGER REFERENCES users(id),
                 rider_location VARCHAR(128),
+                rider_location_lat FLOAT,
+                rider_location_lng FLOAT,
                 pickup_time BIGINT,
                 rider_cost FLOAT,
                 driver_payout FLOAT,
-                status VARCHAR(10),
+                status VARCHAR(16),
                 distance FLOAT,
                 round_trip BOOLEAN,
+                dropoff_time BIGINT,
                 authorization_id VARCHAR(128),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );

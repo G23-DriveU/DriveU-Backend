@@ -49,7 +49,7 @@ app.get('/users', async (req, res) => {
     console.log("GET USERS: ", req.query);
     let response = {};
     try {
-        await updateDeviceId(req.query.firebaseUid, req.query.deviceId);
+        //await updateDeviceId(req.query.firebaseUid, req.query.deviceId);
         response.user = await findUser(req.query.firebaseUid)
         response.status = "OK";
         res.json(response);
@@ -547,25 +547,25 @@ app.get('/cancel-order', (req, res) => {
 // API endpoint to get all car makes
 app.get('/api/car-makes', async (req, res) => {
     try {
-      const makes = await carStats.getAllCarMakes();
-      res.json(makes);
+        const makes = await carStats.getAllCarMakes();
+        res.json(makes);
     } catch (error) {
-      console.error('Error fetching car makes:', error);
-      res.status(500).json({ error: 'Error fetching car makes' });
+        console.error('Error fetching car makes:', error);
+        res.status(500).json({ error: 'Error fetching car makes' });
     }
 });
-  
+
 // API endpoint to get models for a specific make
 app.get('/api/car-makes/:make/models', async (req, res) => {
     try {
-      const make = req.query.make;
-      const models = await carStats.getModelsForMake(make);
-      res.json(models);
+        const make = req.query.make;
+        const models = await carStats.getModelsForMake(make);
+        res.json(models);
     } catch (error) {
-      console.error(`Error fetching models for make ${make}:`, error);
-      res.status(500).json({ error: `Error fetching models for make ${make}` });
+        console.error(`Error fetching models for make ${make}:`, error);
+        res.status(500).json({ error: `Error fetching models for make ${make}` });
     }
-});
+}); 
 
 //The server is started.
 app.listen(port, (error) => {
