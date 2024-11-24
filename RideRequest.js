@@ -3,9 +3,6 @@
 //Necessary imports from axios, dotenv, and ./database are included.
 const axios = require('axios');
 require('dotenv').config();
-const findUserById = require('./database').findUserById;
-const findFutureTrip = require('./database').findFutureTrip;
-const findRideRequestsForTrip = require('./database').findRideRequestsForTrip;
 
 //The API key for Google Maps is retrieved from the environment variables, and gas cost is initialized.
 const mapsAPIkey = process.env.MAPS_API_KEY;
@@ -28,6 +25,8 @@ class RideRequest {
 
     //This function creates a new RideRequest object and calls the getBestRoute and price functions to get the best route and calculate the price.
     static async createRideRequest(reqBody) {
+        const findFutureTrip = (await import('./database.js')).findFutureTrip;
+        const findRideRequestsForTrip = (await import('./database.js')).findRideRequestsForTrip;
         //The future trip object is retrieved from the database.
         this.futureTrip = await findFutureTrip(reqBody.futureTripId);
 
@@ -36,16 +35,39 @@ class RideRequest {
         let rideRequestCount = rideRequests.rowCount;
         for (let i = 0; i < rideRequestCount; i++) {
             let rideRequest = rideRequests.rows[i];
-            if (rideRequest.rider_id == reqBody.riderId) {
+            if (rideRequest.riderId == reqBody.riderId) {
                 throw new Error("Rider already requested ride");
             }
         }
 
         //A new RideRequest object is created and the best route and price are calculated.
         let newRideRequest = new RideRequest(reqBody);
-        await newRideRequest.getBestRoute(this.futureTrip.start_location, newRideRequest.riderLocation, this.futureTrip.destination, this.futureTrip.start_time, this.futureTrip.avoid_highways, this.futureTrip.avoid_tolls);
+        await newRideRequest.getBestRoute(this.futureTrip.startLocation, newRideRequest.riderLocation, this.futureTrip.destination, this.futureTrip.startTime, this.futureTrip.avoidHighways, this.futureTrip.avoidTolls);
         await newRideRequest.price(this.futureTrip);
         return newRideRequest;
+    }
+
+    //This function creates a new RideRequest object from the database.
+    static createRideRequestFromDatabase(reqBody) {
+        let updatedBody = {
+            futureTripId: reqBody.future_trip_id,
+            riderId: reqBody.rider_id,
+            riderLocation: reqBody.rider_location,
+            status: reqBody.status,
+            distance: reqBody.round_trip,
+        };
+        let rideRequest = new RideRequest(updatedBody);
+        rideRequest.id = reqBody.id;
+        rideRequest.riderLocationLat = reqBody.rider_location_lat;
+        rideRequest.riderLocationLng = reqBody.rider_location_lng;
+        rideRequest.pickupTime = reqBody.pickup_time;
+        rideRequest.eta = reqBody.eta;
+        rideRequest.riderCost = reqBody.rider_cost;
+        rideRequest.driverPayout = reqBody.driver_payout;
+        rideRequest.distance = reqBody.distance;
+        rideRequest.dropoffTime = reqBody.dropoff_time;
+        rideRequest.authorizationId = reqBody.authorization_id;
+        return rideRequest;
     }
 
     //This function makes an API call to Google Maps to get the best route from the source to the destination with a stop at the rider's location.
@@ -86,9 +108,10 @@ class RideRequest {
 
     //This function prices the trip based on the extra distance and the driver's car's miles per gallon.
     async price(futureTrip) {
+        const findUserById = (await import('./database.js')).findUserById;
         //gasCost = 3; //ADD GAS COST FROM API HERE ====================================
-        let driver = await findUserById(futureTrip.driver_id);
-        this.riderCost = (this.distance - futureTrip.distance) / parseInt(driver.car_mpg) * gasCost;
+        let driver = await findUserById(futureTrip.driverId);
+        this.riderCost = (this.distance - futureTrip.distance) / parseInt(driver.carMpg) * gasCost;
         if (this.roundTrip) this.riderCost *= 2;
         this.driverPayout = this.riderCost * 0.8;
     }

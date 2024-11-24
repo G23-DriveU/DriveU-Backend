@@ -4,10 +4,11 @@ This is the server.js file and runs the backend server for DriveU.
 After login, userId from Postgres will be used, NOT firebase_uid
 
 TODO
+ADD NEW LATLNG AND RETURN TIMES FOR ROUND TRIPS!!! THEN UPDATE API DOC
+WHERE DOES FCM TOKEN COME FROM?
 fix trip database entries and include transitioning to trip
 fix trip view to find all past trips
 clean up unit testing and add more
-add return time for round trips
 Add notification functionality
 Incorporate paypal and cost functionality to ride requests
 add edit user info functionality and profile pic functionality
@@ -51,7 +52,7 @@ app.get('/users', async (req, res) => {
     let response = {};
     try {
         //await updateDeviceId(req.query.firebaseUid, req.query.deviceId);
-        response.user = await findUser(req.query.firebaseUid)
+        response.user = await findUser(req.query.firebaseUid);
         response.status = "OK";
         res.json(response);
     } catch (error) {
@@ -82,7 +83,7 @@ app.post('/users', async (req, res) => {
                 res.status(500).json(response);
             }
             else {
-                response.user = result.rows[0];
+                response.user = User.createUserFromDatabase(result.rows[0]);
                 response.status = "OK";
                 res.status(201).json(response);
             }
@@ -153,10 +154,10 @@ app.get('/futureTripsForRider', async (req, res) => {
     let response = {};
     try {
         let result = await findFutureTripsForRider(req.query.riderId);
-        response.count = result.rowCount;
+        response.count = result.rows.length;
         response.items = result.rows;
-        for (let i = 0; i < response.items.length; i++) {
-            response.items[i].driver = await findUser(response.items[i].driver_id);
+        for (let i = 0; i < response.count; i++) {
+            response.items[i].driver = await findUserById(response.items[i].driverId);
         }
         response.status = "OK";
         res.json(response);
@@ -184,7 +185,7 @@ app.post('/futureTrips', async (req, res) => {
         
         //If the driver has overlapping future trips, a 409 error is sent.
         for (let i = 0; i < prevFutureTripsCount; i++) {
-            if (prevFutureTrips[i].start_time <= newTrip.eta && prevFutureTrips[i].eta >= newTrip.startTime) {
+            if (prevFutureTrips[i].startTime <= newTrip.eta && prevFutureTrips[i].eta >= newTrip.startTime) {
                 console.log("Overlapping future trips");
                 response.status = "CONFLICT";
                 response.conflict = "Overlapping future trips";
@@ -244,8 +245,8 @@ app.get('/rideRequestsForTrip', async (req, res) => {
     try {
         let result = await findRideRequestsForTrip(req.query.futureTripId);
         response.status = "OK";
-        response.items = result.rows;
-        response.count = result.rowCount;
+        response.items = result.items;
+        response.count = result.count;
         res.json(response);
     } catch (error) {
         response.status = "ERROR";
@@ -262,8 +263,8 @@ app.get('/rideRequestsForRider', async (req, res) => {
     try {
         let result = await findRideRequestsForRider(req.query.riderId);
         response.status = "OK";
-        response.items = result.rows;
-        response.count = result.rowCount;
+        response.items = result.items;
+        response.count = result.count;
         res.json(response);
     } catch (error) {
         response.status = "ERROR";
@@ -322,19 +323,19 @@ app.put('/acceptRideRequest', async (req, res) => {
     try {
         //The ride request and future trip are found.
         let rideRequest = await findRideRequest(req.query.rideRequestId);
-        let futureTrip = await findFutureTrip(rideRequest.future_trip_id);
+        let futureTrip = await findFutureTrip(rideRequest.futureTripId);
 
         //The existing ride requests for the rider are found.
-        let prevRideRequests = await  findRideRequestsForRider(rideRequest.rider_id);
+        let prevRideRequests = await findRideRequestsForRider(rideRequest.riderId);
         let prevRideRequestsCount = prevRideRequests.rowCount;
         prevRideRequests = prevRideRequests.rows;
         
         //If the rider has overlapping ride requests, a 409 error is sent.
         for (let i = 0; i < prevRideRequestsCount; i++) {
-            if  (prevRideRequests[i].future_trip_id == futureTrip.id) {
+            if  (prevRideRequests[i].futureTripId == futureTrip.id) {
                 continue;
             }
-            if (prevRideRequests[i].futureTrip.start_time <= futureTrip.eta && prevRideRequests[i].futureTrip.eta >= futureTrip.start_time && prevRideRequests[i].status != "pending") {
+            if (prevRideRequests[i].futureTrip.startTime <= futureTrip.eta && prevRideRequests[i].futureTrip.eta >= futureTrip.startTime && prevRideRequests[i].status != "pending") {
                 response.status = "CONFLICT";
                 response.conflict = "Rider has overlapping ride requests";
                 console.log("Overlapping ride requests");

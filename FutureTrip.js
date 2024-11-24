@@ -30,6 +30,30 @@ class FutureTrip {
         return newTrip;
     }
 
+    //This function creates a new FutureTrip object from the database.
+    static createFutureTripFromDatabase(reqBody) {
+        let updatedBody = {
+            driverId: reqBody.driver_id,
+            startLocation: reqBody.start_location,
+            destination: reqBody.destination,
+            startTime: reqBody.start_time,
+            avoidHighways: reqBody.avoid_highways,
+            avoidTolls: reqBody.avoid_tolls,
+            roundTrip: reqBody.round_trip
+        };
+        let futureTrip = new FutureTrip(updatedBody);
+        futureTrip.id = reqBody.id;
+        futureTrip.startLocationLat = reqBody.start_location_lat;
+        futureTrip.startLocationLng = reqBody.start_location_lng;
+        futureTrip.destinationLat = reqBody.destination_lat;
+        futureTrip.destinationLng = reqBody.destination_lng
+        futureTrip.eta = reqBody.eta;
+        futureTrip.distance = reqBody.distance;
+        futureTrip.isFull = reqBody.is_full;
+        futureTrip.ets = reqBody.ets;
+        return futureTrip;
+    }
+
     //This function makes an API call to Google Maps to get the best route from the source to the destination.
     async getBestRoute(src, dest, avoidHighways, avoidTolls) {
         //The avoidStuff variable is used to specify the type of routes to avoid based on the user's preferences.

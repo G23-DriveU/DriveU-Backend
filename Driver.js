@@ -12,7 +12,6 @@ class Driver extends User {
         this.carPlate = reqBody.carPlate;
         this.carMake = reqBody.carMake;
         this.carModel = reqBody.carModel;
-        this.carCapacity = reqBody.carCapacity;
         this.carMpg = 20; //ADD RESPONSE FROM API CALL TO GET CAR MPG HERE ====================================
     }
 }

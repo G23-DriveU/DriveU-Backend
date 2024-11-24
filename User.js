@@ -8,13 +8,37 @@ class User {
 
         this.profileImage = null; //ADD BLOB PROFILE PIC =====================
 
-        this.deviceId = reqBody.deviceId;
         this.name = reqBody.name;
         this.email = reqBody.email;
         this.phoneNumber = reqBody.phoneNumber;
         this.school = reqBody.school;
         if (reqBody.driver == 'true') this.driver = true;
         else this.driver = false;
+    }
+
+    //This function creates a new User object from the database.
+    static createUserFromDatabase(reqBody) {
+        let updatedBody = {
+            firebaseUid: reqBody.firebase_uid,
+            profileImage: reqBody.profile_image,
+            name: reqBody.name,
+            email: reqBody.email,
+            phoneNumber: reqBody.phone_number,
+            school: reqBody.school,
+            driver: reqBody.driver,
+        };
+        let user = new User(updatedBody);
+        user.id = reqBody.id;
+        user.fcmToken = reqBody.fcm_token;
+        user.driverRating = reqBody.driver_rating;
+        user.driverReviewCount = reqBody.driver_review_count;
+        user.riderRating = reqBody.rider_rating;
+        user.riderReviewCount = reqBody.rider_review_count;
+        user.carColor = reqBody.car_color;
+        user.carPlate = reqBody.car_plate;
+        user.carMake = reqBody.car_make;
+        user.carModel = reqBody.car_model;
+        return user;
     }
 }
 

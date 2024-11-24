@@ -1,8 +1,11 @@
 //This is the database.js file, and contains all the database queries for the application.
 
-//Necessary imports from pg are included.
+//Necessary imports are included.
 const { Client } = require('pg');
 require('dotenv').config();
+const User = require('./User');
+const FutureTrip = require('./FutureTrip');
+const RideRequest = require('./RideRequest');
 
 //The PostgreSQL client is initialized with the connection details.
 const client = new Client({
@@ -30,8 +33,8 @@ const doesUserExist = async (firebaseUid) => {
 const insertUser = async (curUser) => {
     let result = null;
     if (curUser.driver == true) {
-        result = await client.query('INSERT INTO users (firebase_uid, profile_image, name, email, phone_number, school, driver, car_color, car_plate, car_make, car_model, car_capacity, car_mpg) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *', 
-            [curUser.firebaseUid, curUser.profileImage, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.driver, curUser.carColor, curUser.carPlate, curUser.carMake, curUser.carModel, curUser.carCapacity, curUser.carMpg]);
+        result = await client.query('INSERT INTO users (firebase_uid, profile_image, name, email, phone_number, school, driver, car_color, car_plate, car_make, car_model, car_mpg) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *', 
+            [curUser.firebaseUid, curUser.profileImage, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.driver, curUser.carColor, curUser.carPlate, curUser.carMake, curUser.carModel, curUser.carMpg]);
     }
     else {
         //The user is inserted without car details if they are not a driver.
@@ -48,7 +51,10 @@ const findUser = async (firebaseUid) => {
         values: [firebaseUid],
     };
     let result = await client.query(query);
-    return result.rows[0];
+    if (result.rows.length > 0) {
+        return User.createUserFromDatabase(result.rows[0]);
+    }
+    return;
 }
 
 //The updateDeviceId function updates the device ID of a user in the database.
@@ -68,14 +74,18 @@ const findUserById = async (userId) => {
         values: [userId],
     };
     let result = await client.query(query);
-    return result.rows[0];
+    return User.createUserFromDatabase(result.rows[0]);
 }
 
 //The insertTestData function inserts a futureTrip object into the database.
 const insertFutureTrip = async (newTrip) => {
     let result = await client.query('INSERT INTO future_trips (driver_id, start_location, destination, start_time, eta, distance, avoid_highways, avoid_tolls, round_trip, is_full) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
         [newTrip.driverId, newTrip.startLocation, newTrip.destination, newTrip.startTime, newTrip.eta, newTrip.distance, newTrip.avoidHighways, newTrip.avoidTolls, newTrip.roundTrip, false]);
-    return result;
+    if (result.rows.length > 0) {
+        result.rows[0] = FutureTrip.createFutureTripFromDatabase(result.rows[0]);
+        return result;
+    }
+    return;
 }
 
 //The findFutureTripsForDriver function retrieves all future trips for a given user ID of the driver.
@@ -85,6 +95,9 @@ const findFutureTripsForDriver = async (driverId) => {
         values: [driverId],
     };
     let result = await client.query(query);
+    for (let i = 0; i < result.rows.length; i++) {
+        result.rows[i] = FutureTrip.createFutureTripFromDatabase(result.rows[i]);
+    }
     return result;
 }
 
@@ -95,6 +108,9 @@ const findFutureTripsForRider = async (riderId) => {
         values: [riderId],
     };
     let result = await client.query(query);
+    for (let i = 0; i < result.rows.length; i++) {
+        result.rows[i] = FutureTrip.createFutureTripFromDatabase(result.rows[i]);
+    }
     return result;
 }
 
@@ -105,7 +121,10 @@ const findFutureTrip = async (futureTripId) => {
         values: [futureTripId],
     };
     let result = await client.query(query);
-    return result.rows[0];
+    if (result.rows.length > 0) {
+        return FutureTrip.createFutureTripFromDatabase(result.rows[0]);
+    }
+    return;
 }
 
 //The setFutureTripFull function updates the is_full attribute of a future trip to true.
@@ -144,6 +163,9 @@ const deleteFutureTrip = async (futureTripId) => {
 const insertRideRequest = async (newRideRequest) => {
     let result = await client.query('INSERT INTO ride_requests (future_trip_id, rider_id, rider_location, pickup_time, rider_cost, driver_payout, status, distance, round_trip, authorization_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
         [newRideRequest.futureTripId, newRideRequest.riderId, newRideRequest.riderLocation, newRideRequest.pickupTime, newRideRequest.riderCost, newRideRequest.driverPayout, newRideRequest.status, newRideRequest.distance, newRideRequest.roundTrip, newRideRequest.authorizationId]);
+    if (result.rows.length > 0) {
+        result.rows[0] = RideRequest.createRideRequestFromDatabase(result.rows[0]);
+    }
     return result;
 };
 
@@ -154,7 +176,7 @@ const findRideRequest = async (rideRequestId) => {
         values: [rideRequestId],
     };
     let result = await client.query(query);
-    return result.rows[0];
+    return RideRequest.createRideRequestFromDatabase(result.rows[0]);
 }
 
 //The findRideRequestsForTrip function retrieves all ride requests for a given future trip ID.
@@ -168,8 +190,12 @@ const findRideRequestsForTrip = async (futureTripId) => {
     //The rider details are added to the ride request object.
     let rideRequestsCount = result.rowCount;
     let rideRequests = result.rows;
+    result = {};
+    result.items = rideRequests;
+    result.count = rideRequestsCount;
     for (let i = 0; i < rideRequestsCount; i++) {
-        result.rows[i].rider = await findUserById(rideRequests[i].rider_id);
+        result.items[i] = RideRequest.createRideRequestFromDatabase(result.items[i]);
+        result.items[i].rider = await findUserById(result.items[i].riderId);
     }
     return result;
 }
@@ -185,9 +211,13 @@ const findRideRequestsForRider = async (riderId) => {
     //The future trip and driver details are added to the ride request object.
     let rideRequestsCount = result.rowCount;
     let rideRequests = result.rows;
+    result = {};
+    result.items = rideRequests;
+    result.count = rideRequestsCount;
     for (let i = 0; i < rideRequestsCount; i++) {
-        result.rows[i].futureTrip = await findFutureTrip(rideRequests[i].future_trip_id);
-        result.rows[i].futureTrip.driver = await findUserById(rideRequests[i].futureTrip.driver_id);
+        result.items[i] = RideRequest.createRideRequestFromDatabase(result.items[i]);
+        result.items[i].futureTrip = await findFutureTrip(result.items[i].futureTripId);
+        result.items[i].futureTrip.driver = await findUserById(result.items[i].futureTrip.driverId);
     }
     return result;
 }
@@ -255,7 +285,6 @@ client.connect()
                 car_plate VARCHAR(128),
                 car_make VARCHAR(128),
                 car_model VARCHAR(128),
-                car_capacity INTEGER,
                 car_mpg FLOAT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
@@ -301,6 +330,7 @@ client.connect()
                 distance FLOAT,
                 avoid_highways BOOLEAN,
                 avoid_tolls BOOLEAN,  
+                car_capacity INTEGER,
                 round_trip BOOLEAN,
                 is_full BOOLEAN,
                 ets BIGINT,
