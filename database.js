@@ -316,6 +316,7 @@ client.connect()
                 rider_location_lat FLOAT,
                 rider_location_lng FLOAT,
                 pickup_time BIGINT,
+                eta BIGINT,
                 rider_cost FLOAT,
                 driver_payout FLOAT,
                 status VARCHAR(16),
@@ -338,5 +339,11 @@ client.connect()
         console.log('Error connecting to PostgreSQL or creating tables:', error);
     });
 
+    //The close function is used to close the connection to the database.
+    async function close() {
+        await client.end();
+        console.log('Connection to PostgreSQL closed');
+    }
+
 //The functions are exported for use in other files.
-module.exports = { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateDeviceId, acceptRideRequest };
+module.exports = { close, doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateDeviceId, acceptRideRequest };

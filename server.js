@@ -6,6 +6,7 @@ After login, userId from Postgres will be used, NOT firebase_uid
 TODO
 fix trip database entries and include transitioning to trip
 fix trip view to find all past trips
+clean up unit testing and add more
 add return time for round trips
 Add notification functionality
 Incorporate paypal and cost functionality to ride requests
@@ -568,10 +569,13 @@ app.get('/api/car-makes/:make/models', async (req, res) => {
 }); 
 
 //The server is started.
-app.listen(port, (error) => {
+const server = app.listen(port, (error) => {
     if (error) {
         console.log('Something went wrong', error);
     } else {
         console.log(`Server is listening on port ${port}`);
     }
 });
+
+//The app and server are exported.
+module.exports = { app, server };
