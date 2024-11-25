@@ -20,8 +20,12 @@ class FutureTrip {
         else this.avoidHighways = false;
         if (reqBody.avoidTolls == 'true') this.avoidTolls = true;
         else this.avoidTolls = false;
-        if (reqBody.roundTrip == 'true') this.roundTrip = true;
-        else this.roundTrip = false;
+        if (reqBody.roundTrip == 'true') {
+            this.roundTrip = true;
+        } 
+        else {
+            this.roundTrip = false;
+        }
     }
 
     //This function creates a new FutureTrip object and calls the getBestRoute function to get the best route from the start location to the destination.
@@ -40,10 +44,10 @@ class FutureTrip {
             startTime: reqBody.start_time,
             avoidHighways: reqBody.avoid_highways,
             avoidTolls: reqBody.avoid_tolls,
-            roundTrip: reqBody.round_trip
         };
         let futureTrip = new FutureTrip(updatedBody);
         futureTrip.id = reqBody.id;
+        futureTrip.roundTrip = reqBody.round_trip;
         futureTrip.startLocationLat = reqBody.start_location_lat;
         futureTrip.startLocationLng = reqBody.start_location_lng;
         futureTrip.destinationLat = reqBody.destination_lat;
