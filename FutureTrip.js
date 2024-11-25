@@ -14,6 +14,7 @@ class FutureTrip {
         this.driverId = reqBody.driverId;
         this.startLocation = reqBody.startLocation;
         this.destination = reqBody.destination;
+        this.carCapacity = reqBody.carCapacity;
         this.startTime = parseInt(reqBody.startTime, 10); //IN SECONDS SINCE EPOCH
         if (reqBody.avoidHighways == 'true') this.avoidHighways = true;
         else this.avoidHighways = false;
@@ -26,7 +27,7 @@ class FutureTrip {
     //This function creates a new FutureTrip object and calls the getBestRoute function to get the best route from the start location to the destination.
     static async createFutureTrip(reqBody) {
         let newTrip = new FutureTrip(reqBody);
-        await newTrip.getBestRoute(newTrip.startLocation, newTrip.destination, newTrip.avoidHighways, newTrip.avoidTolls);
+        await newTrip.getBestRoute(newTrip.startLocation, newTrip.destination, newTrip.roundTrip, newTrip.avoidHighways, newTrip.avoidTolls);
         return newTrip;
     }
 
@@ -55,7 +56,7 @@ class FutureTrip {
     }
 
     //This function makes an API call to Google Maps to get the best route from the source to the destination.
-    async getBestRoute(src, dest, avoidHighways, avoidTolls) {
+    async getBestRoute(src, dest, roundTrip, avoidHighways, avoidTolls) {
         //The avoidStuff variable is used to specify the type of routes to avoid based on the user's preferences.
         let avoidStuff = "";
         if (avoidHighways == true && avoidTolls == true) 
@@ -64,27 +65,54 @@ class FutureTrip {
             avoidStuff = "highways";
         else if (avoidTolls == true)
             avoidStuff = "tolls";
+        let response = null;
 
-        //The API call is made to the Google Maps Directions API with the specified parameters.
-        let response = await axios.get('https://maps.googleapis.com/maps/api/directions/json', {
-            params: {
-                origin: src, 
-                destination: dest, 
-                mode: "DRIVE",
-                key: mapsAPIkey,
-                avoid: avoidStuff
-            }
-        });
+        //If the roundTrip parameter is true, the API call is made to the Google Maps Directions API with the source as the destination.
+        if (roundTrip == true) {
+            response = await axios.get('https://maps.googleapis.com/maps/api/directions/json', {
+                params: {
+                    origin: src, 
+                    destination: src, 
+                    mode: "DRIVE",
+                    waypoints: dest,
+                    key: mapsAPIkey,
+                    avoid: avoidStuff
+                }
+            });
+        }
+        else {
+            //The API call is made to the Google Maps Directions API with the specified parameters.
+            response = await axios.get('https://maps.googleapis.com/maps/api/directions/json', {
+                params: {
+                    origin: src, 
+                    destination: dest, 
+                    mode: "DRIVE",
+                    key: mapsAPIkey,
+                    avoid: avoidStuff
+                }
+            });
+        }
 
         //The response status is checked.
-        console.log("Maps API Response: ", response.data);
+        console.log("Routes API Response: ", response.data);
+        console.log("Routes API Legs: ", response.data.routes[0].legs);
         if (response.data.status != "OK") {
             throw new Error("Error in API response");
         }
 
+        //The latitude and longitude of the source and destination are extracted from the API response.
+        this.startLocationLat = response.data.routes[0].legs[0].start_location.lat;
+        this.startLocationLng = response.data.routes[0].legs[0].start_location.lng;
+        this.destinationLat = response.data.routes[0].legs[0].end_location.lat;
+        this.destinationLng = response.data.routes[0].legs[0].end_location.lng;
+
         //The distance and estimated time of arrival (ETA) are extracted from the API response.
         this.distance = this.metersToMiles(response.data.routes[0].legs[0].distance.value);
         this.eta = this.startTime + response.data.routes[0].legs[0].duration.value;
+        this.ets = this.eta;
+        if (roundTrip == true) {
+            this.ets = this.eta + response.data.routes[0].legs[1].duration.value;
+        }
     }
 
     //This function converts meters to miles.

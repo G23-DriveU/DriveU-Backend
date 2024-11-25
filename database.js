@@ -33,13 +33,13 @@ const doesUserExist = async (firebaseUid) => {
 const insertUser = async (curUser) => {
     let result = null;
     if (curUser.driver == true) {
-        result = await client.query('INSERT INTO users (firebase_uid, profile_image, name, email, phone_number, school, driver, car_color, car_plate, car_make, car_model, car_mpg) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *', 
-            [curUser.firebaseUid, curUser.profileImage, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.driver, curUser.carColor, curUser.carPlate, curUser.carMake, curUser.carModel, curUser.carMpg]);
+        result = await client.query('INSERT INTO users (firebase_uid, profile_image, name, email, phone_number, school, fcm_token, driver, driver_rating, driver_review_count, rider_rating, rider_review_count, car_color, car_plate, car_make, car_model, car_mpg) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *', 
+            [curUser.firebaseUid, curUser.profileImage, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.fcmToken, curUser.driver, 0, 0, 0, 0, curUser.carColor, curUser.carPlate, curUser.carMake, curUser.carModel, curUser.carMpg]);
     }
     else {
         //The user is inserted without car details if they are not a driver.
-        result = await client.query('INSERT INTO users (firebase_uid, profile_image, name, email, phone_number, school, driver) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *', 
-            [curUser.firebaseUid, curUser.profileImage, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.driver]);
+        result = await client.query('INSERT INTO users (firebase_uid, profile_image, name, email, phone_number, school, fcm_token, driver, rider_rating, rider_review_count) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *', 
+            [curUser.firebaseUid, curUser.profileImage, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.fcmToken, curUser.driver, 0, 0]);
     }
     return result;
 }
@@ -57,11 +57,11 @@ const findUser = async (firebaseUid) => {
     return;
 }
 
-//The updateDeviceId function updates the device ID of a user in the database.
-const updateDeviceId = async (firebaseUid, deviceId) => {
+//The updateFcmToken function updates the FCM Token of a user in the database.
+const updateFcmToken = async (firebaseUid, fcmToken) => {
     let query = {
-        text: 'UPDATE users SET device_id = $1 WHERE firebase_uid = $2',
-        values: [deviceId, firebaseUid],
+        text: 'UPDATE users SET fcm_token = $1 WHERE firebase_uid = $2',
+        values: [fcmToken, firebaseUid],
     };
     let result = await client.query(query);
     return result;
@@ -79,8 +79,8 @@ const findUserById = async (userId) => {
 
 //The insertTestData function inserts a futureTrip object into the database.
 const insertFutureTrip = async (newTrip) => {
-    let result = await client.query('INSERT INTO future_trips (driver_id, start_location, destination, start_time, eta, distance, avoid_highways, avoid_tolls, round_trip, is_full) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
-        [newTrip.driverId, newTrip.startLocation, newTrip.destination, newTrip.startTime, newTrip.eta, newTrip.distance, newTrip.avoidHighways, newTrip.avoidTolls, newTrip.roundTrip, false]);
+    let result = await client.query('INSERT INTO future_trips (driver_id, start_location, start_location_lat, start_location_lng, destination, destination_lat, destination_lng, start_time, eta, distance, avoid_highways, avoid_tolls, car_capacity, round_trip, is_full, ets) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *',
+        [newTrip.driverId, newTrip.startLocation, newTrip.startLocationLat, newTrip.startLocationLng, newTrip.destination, newTrip.destinationLat, newTrip.destinationLng, newTrip.startTime, newTrip.eta, newTrip.distance, newTrip.avoidHighways, newTrip.avoidTolls, newTrip.carCapacity, newTrip.roundTrip, false, newTrip.ets]);
     if (result.rows.length > 0) {
         result.rows[0] = FutureTrip.createFutureTripFromDatabase(result.rows[0]);
         return result;
@@ -161,8 +161,8 @@ const deleteFutureTrip = async (futureTripId) => {
 
 //The insertRideRequest function inserts a new ride request object into the database.
 const insertRideRequest = async (newRideRequest) => {
-    let result = await client.query('INSERT INTO ride_requests (future_trip_id, rider_id, rider_location, pickup_time, rider_cost, driver_payout, status, distance, round_trip, authorization_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
-        [newRideRequest.futureTripId, newRideRequest.riderId, newRideRequest.riderLocation, newRideRequest.pickupTime, newRideRequest.riderCost, newRideRequest.driverPayout, newRideRequest.status, newRideRequest.distance, newRideRequest.roundTrip, newRideRequest.authorizationId]);
+    let result = await client.query('INSERT INTO ride_requests (future_trip_id, rider_id, rider_location, rider_location_lat, rider_location_lng, pickup_time, eta, rider_cost, driver_payout, status, distance, round_trip, dropoff_time, authorization_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *', 
+        [newRideRequest.futureTripId, newRideRequest.riderId, newRideRequest.riderLocation, newRideRequest.riderLocationLat, newRideRequest.riderLocationLng, newRideRequest.pickupTime, newRideRequest.eta, newRideRequest.riderCost, newRideRequest.driverPayout, newRideRequest.status, newRideRequest.distance, newRideRequest.roundTrip, newRideRequest.dropoffTime, newRideRequest.authorizationId]);
     if (result.rows.length > 0) {
         result.rows[0] = RideRequest.createRideRequestFromDatabase(result.rows[0]);
     }
@@ -376,4 +376,4 @@ client.connect()
     }
 
 //The functions are exported for use in other files.
-module.exports = { close, doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateDeviceId, acceptRideRequest };
+module.exports = { close, doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateFcmToken, acceptRideRequest };

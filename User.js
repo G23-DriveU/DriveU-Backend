@@ -12,6 +12,7 @@ class User {
         this.email = reqBody.email;
         this.phoneNumber = reqBody.phoneNumber;
         this.school = reqBody.school;
+        this.fcmToken = reqBody.fcmToken;
         if (reqBody.driver == 'true') this.driver = true;
         else this.driver = false;
     }
@@ -38,6 +39,7 @@ class User {
         user.carPlate = reqBody.car_plate;
         user.carMake = reqBody.car_make;
         user.carModel = reqBody.car_model;
+        user.carMpg = reqBody.car_mpg;
         return user;
     }
 }
