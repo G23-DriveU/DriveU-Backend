@@ -95,10 +95,10 @@ class FutureTrip {
 
         //The response status is checked.
         console.log("Routes API Response: ", response.data);
-        console.log("Routes API Legs: ", response.data.routes[0].legs);
         if (response.data.status != "OK") {
             throw new Error("Error in API response");
         }
+        console.log("Routes API Legs: ", response.data.routes[0].legs);
 
         //The latitude and longitude of the source and destination are extracted from the API response.
         this.startLocationLat = response.data.routes[0].legs[0].start_location.lat;

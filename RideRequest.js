@@ -118,10 +118,10 @@ class RideRequest {
 
         //The response status is checked.
         console.log("Routes API Response: ", response.data); 
-        console.log("Routes API Response Legs: ", response.data.routes[0].legs); 
         if (response.data.status != "OK") {
             throw new Error("Error in API response");
         }
+        console.log("Routes API Response Legs: ", response.data.routes[0].legs); 
 
         //The rider's location is extracted from the API response.
         this.riderLocationLat = response.data.routes[0].legs[0].end_location.lat;
