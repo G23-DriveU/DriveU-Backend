@@ -127,6 +127,36 @@ const findFutureTrip = async (futureTripId) => {
     return;
 }
 
+//The findFutureTripsByRadius function retrieves all open future trips based on the radius around a point.
+const findFutureTripsByRadius = async (riderId, radius, lat, lng) => {
+    let query = {
+        text: 'SELECT * FROM future_trips WHERE driver_id <> $1 AND is_full = false',
+        values: [riderId],
+    };
+    let result = await client.query(query);
+    latConversion = radius / 69;
+    lngConversion = radius / (69 * Math.cos(lat * Math.PI / 180));
+
+    //The future trip and driver details are added to the ride request object.
+    let rideRequestsCount = result.rowCount;
+    let rideRequests = result.rows;
+    result = {};
+    result.items = [];
+    result.count = 0;
+    for (let i = 0; i < rideRequestsCount; i++) {
+        result.items[result.count] = RideRequest.createFutureTripFromDatabase(rideRequests[i]);
+        let calculation = ((result.items[result.count].destinationLng - lng) ** 2) / (lngConversion ** 2) + ((result.items[result.count].destinationLat - lat) ** 2) / (latConversion ** 2);
+        if (calculation <= 1) {
+            result.count++;
+        }
+        else {
+            result.items[result.count] = null;
+        }
+        //ADD THE DRIVER DETAILS IN SERVER.JS
+    }
+    return result;
+}
+
 //The setFutureTripFull function updates the is_full attribute of a future trip to true.
 const setFutureTripFull = async (futureTripId) => {
     let query = {

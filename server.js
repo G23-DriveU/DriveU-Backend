@@ -139,7 +139,7 @@ app.get('/futureTripsForDriver', async (req, res) => {
         response.items = result.rows;
         response.status = "OK";
         res.json(response);
-    } catch (error) {  
+    } catch (error) {
         response.status = "ERROR";
         response.error = error.toString();
         console.log("GET FUTURE TRIPS FOR DRIVER ERROR", error)
@@ -168,6 +168,25 @@ app.get('/futureTripsForRider', async (req, res) => {
     }
 });
 
+app.get('/futureTripsByRadius', async (req, res) => {
+    console.log("GET FUTURE TRIPS BY RADIUS: ", req.query);
+    let response = {};
+    try {
+        let result = await findFutureTripsForRider(req.query.riderId);
+        response.count = result.rows.length;
+        response.items = result.rows;
+        for (let i = 0; i < response.count; i++) {
+            response.items[i].driver = await findUserById(response.items[i].driverId);
+        }
+        response.status = "OK";
+        res.json(response);
+    } catch (error) {  
+        response.status = "ERROR";
+        response.error = error.toString();
+        console.log("GET FUTURE TRIPS FOR RIDER ERROR", error)
+        res.status(500).json(response);
+    }
+});
 
 //POST futureTrips will take in future trip info and insert into database, sending database response back to client.
 app.post('/futureTrips', async (req, res) => {
