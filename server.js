@@ -26,6 +26,7 @@ const FutureTrip = require('./FutureTrip');
 const RideRequest = require('./RideRequest');
 const paypal = require('./paypal');
 const carStats = require('./carStats');
+const fuelPrices = require('./fuelPrices');
 
 //The express app is created and the port is set to 8080.
 const app = express();
@@ -586,6 +587,18 @@ app.get('/api/car-makes/:make/models', async (req, res) => {
         res.status(500).json({ error: `Error fetching models for make ${make}` });
     }
 }); 
+
+// For testing of fuelPrices.js
+app.get('/fuel-prices', async (req, res) => {
+    try {
+        const fuelPrice = await fuelPrices.getLocalGasPrices(req.query.lat, req.query.lng);
+        res.json(fuelPrice);
+    } catch (error) {
+        console.error('Error fetching gas prices:', error);
+        res.status(500).json({ error: 'Error fetching gas prices' });
+    }
+});
+
 
 //The server is started.
 const server = app.listen(port, (error) => {
