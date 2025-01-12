@@ -128,23 +128,23 @@ const findFutureTrip = async (futureTripId) => {
 }
 
 //The findFutureTripsByRadius function retrieves all open future trips based on the radius around a point.
-const findFutureTripsByRadius = async (riderId, radius, lat, lng) => {
+const findFutureTripsByRadius = async (riderId, radius, lat, lng, roundTrip) => {
     let query = {
-        text: 'SELECT * FROM future_trips WHERE driver_id <> $1 AND is_full = false',
-        values: [riderId],
+        text: 'SELECT * FROM future_trips WHERE driver_id <> $1 AND is_full = false AND round_trip = $2',
+        values: [riderId, roundTrip],
     };
     let result = await client.query(query);
     latConversion = radius / 69;
     lngConversion = radius / (69 * Math.cos(lat * Math.PI / 180));
 
     //The future trip and driver details are added to the ride request object.
-    let rideRequestsCount = result.rowCount;
-    let rideRequests = result.rows;
+    let futureTripCount = result.rowCount;
+    let futureTrips = result.rows;
     result = {};
     result.items = [];
     result.count = 0;
-    for (let i = 0; i < rideRequestsCount; i++) {
-        result.items[result.count] = RideRequest.createFutureTripFromDatabase(rideRequests[i]);
+    for (let i = 0; i < futureTripCount; i++) {
+        result.items[result.count] = FutureTrip.createFutureTripFromDatabase(futureTrips[i]);
         let calculation = ((result.items[result.count].destinationLng - lng) ** 2) / (lngConversion ** 2) + ((result.items[result.count].destinationLat - lat) ** 2) / (latConversion ** 2);
         if (calculation <= 1) {
             result.count++;
@@ -152,7 +152,6 @@ const findFutureTripsByRadius = async (riderId, radius, lat, lng) => {
         else {
             result.items[result.count] = null;
         }
-        //ADD THE DRIVER DETAILS IN SERVER.JS
     }
     return result;
 }
@@ -406,4 +405,4 @@ client.connect()
     }
 
 //The functions are exported for use in other files.
-module.exports = { close, doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateFcmToken, acceptRideRequest };
+module.exports = { close, doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateFcmToken, acceptRideRequest };

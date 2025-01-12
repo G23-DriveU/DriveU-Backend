@@ -13,7 +13,7 @@ class User {
         this.phoneNumber = reqBody.phoneNumber;
         this.school = reqBody.school;
         this.fcmToken = reqBody.fcmToken;
-        if (reqBody.driver == 'true') this.driver = true;
+        if (reqBody.driver == 'true' || reqBody.driver) this.driver = true;
         else this.driver = false;
     }
 

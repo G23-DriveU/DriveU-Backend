@@ -19,7 +19,7 @@ automatically cancel future trips 30 mins after and send notis to driver 5 mins 
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateFcmToken, acceptRideRequest } = require('./database');
+const { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateFcmToken, acceptRideRequest } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
@@ -169,14 +169,16 @@ app.get('/futureTripsForRider', async (req, res) => {
     }
 });
 
+//GET futureTripsByRadius will take in riderId, radius, lat, and lng, and send all future trips in the area to the user.
 app.get('/futureTripsByRadius', async (req, res) => {
     console.log("GET FUTURE TRIPS BY RADIUS: ", req.query);
     let response = {};
     try {
-        let result = await findFutureTripsForRider(req.query.riderId);
-        response.count = result.rows.length;
-        response.items = result.rows;
-        for (let i = 0; i < response.count; i++) {
+        let result = await findFutureTripsByRadius(req.query.riderId, req.query.radius, req.query.lat, req.query.lng, req.query.roundTrip);
+        response.count = result.count;
+        response.items = [];
+        for (let i = 0; i < result.count; i++) {
+            response.items[i] = result.items[i];
             response.items[i].driver = await findUserById(response.items[i].driverId);
         }
         response.status = "OK";

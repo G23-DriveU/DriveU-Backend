@@ -44,6 +44,7 @@ class FutureTrip {
             startTime: reqBody.start_time,
             avoidHighways: reqBody.avoid_highways,
             avoidTolls: reqBody.avoid_tolls,
+            carCapacity: reqBody.car_capacity,
         };
         let futureTrip = new FutureTrip(updatedBody);
         futureTrip.id = reqBody.id;
