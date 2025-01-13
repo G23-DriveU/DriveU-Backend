@@ -4,14 +4,12 @@ This is the server.js file and runs the backend server for DriveU.
 After login, userId from Postgres will be used, NOT firebase_uid
 
 TODO
-ADD NEW LATLNG AND RETURN TIMES FOR ROUND TRIPS!!! THEN UPDATE API DOC
 fix trip database entries and include transitioning to trip
 fix trip view to find all past trips
 clean up unit testing and add more
 Add notification functionality
 Incorporate paypal and cost functionality to ride requests
 add edit user info functionality and profile pic functionality
-update finding future trips for rider
 automatically cancel future trips 30 mins after and send notis to driver 5 mins before??
 */
 
@@ -19,7 +17,7 @@ automatically cancel future trips 30 mins after and send notis to driver 5 mins 
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const { doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateFcmToken, acceptRideRequest } = require('./database');
+const { doesUserExist, insertUser, findUser, findUserById, setProfilePic, getProfilePic, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateFcmToken, acceptRideRequest } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
@@ -53,6 +51,12 @@ app.get('/users', async (req, res) => {
     try {
         await updateFcmToken(req.query.firebaseUid, req.query.fcmToken);
         response.user = await findUser(req.query.firebaseUid);
+        if (!response.user) {
+            response.status = "ERROR";
+            response.error = "User does not exist";
+            res.status(404).json(response);
+            return;
+        }
         response.status = "OK";
         res.json(response);
     } catch (error) {
@@ -187,6 +191,44 @@ app.get('/futureTripsByRadius', async (req, res) => {
         response.status = "ERROR";
         response.error = error.toString();
         console.log("GET FUTURE TRIPS FOR RIDER ERROR", error)
+        res.status(500).json(response);
+    }
+});
+
+//NEED TO FIX
+//GET profilePic will take in userId and send profile pic to client.
+app.get('/profilePic', async (req, res) => {
+    console.log("GET PROFILE PIC: ", req.query); 
+    let response = {};
+    try {
+        let result = await getProfilePic(req.query.userId);
+        //ERROR HANDLE
+        response.status = "OK";
+        response.item = result;
+        res.json(response);
+    } catch (error) {
+        response.status = "ERROR";
+        response.error = error.toString();
+        console.log("GET PROFILE PIC ERROR", error);
+        res.status(500).json(response);
+    }
+});
+
+//NEED TO FIX
+//POST profilePic will take in userId and profile pic, updating the profile pic in the database.
+app.post('/profilePic', async (req, res) => {
+    console.log("POST PROFILE PIC: ", req.query);
+    let response = {};
+    try {
+        let result = await updateProfilePic(req.query.userId, req.query.profilePic);
+        //ERROR HANDLE
+        response.status = "OK";
+        response.item = result;
+        res.json(response);
+    } catch (error) {
+        response.status = "ERROR";
+        response.error = error.toString();
+        console.log("POST PROFILE PIC ERROR", error);
         res.status(500).json(response);
     }
 });

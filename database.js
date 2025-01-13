@@ -77,6 +77,28 @@ const findUserById = async (userId) => {
     return User.createUserFromDatabase(result.rows[0]);
 }
 
+//UPDATE THIS TO CONVERT AND RETURN VALUE
+//The setProfilePic function updates the profile picture of a user in the database.
+const setProfilePic = async (userId, profilePic) => {
+    let query = {
+        text: 'UPDATE users SET profile_image = $1 WHERE id = $2',
+        values: [profilePic, userId],
+    }
+    let result = await client.query(query);
+    return result;//CHANGE
+}
+
+//The getProfilePic function retrieves the profile picture of a user from the database.
+const getProfilePic = async (userId) => {
+    let query = {
+        text: 'SELECT profile_image FROM users WHERE id = $1',
+        values: [userId],
+    }
+    let result = await client.query(query);
+    return result.rows[0].profile_image;
+}
+
+
 //The insertTestData function inserts a futureTrip object into the database.
 const insertFutureTrip = async (newTrip) => {
     let result = await client.query('INSERT INTO future_trips (driver_id, start_location, start_location_lat, start_location_lng, destination, destination_lat, destination_lng, start_time, eta, distance, avoid_highways, avoid_tolls, car_capacity, round_trip, is_full, ets) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *',
@@ -405,4 +427,4 @@ client.connect()
     }
 
 //The functions are exported for use in other files.
-module.exports = { close, doesUserExist, insertUser, findUser, findUserById, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateFcmToken, acceptRideRequest };
+module.exports = { close, doesUserExist, insertUser, findUser, findUserById, setProfilePic, getProfilePic, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateFcmToken, acceptRideRequest };
