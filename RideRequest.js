@@ -60,10 +60,10 @@ class RideRequest {
             futureTripId: reqBody.future_trip_id,
             riderId: reqBody.rider_id,
             riderLocation: reqBody.rider_location,
-            status: reqBody.status,
             distance: reqBody.distance,
         };
         let rideRequest = new RideRequest(updatedBody);
+        rideRequest.status = reqBody.status;
         rideRequest.id = reqBody.id;
         rideRequest.riderLocationLat = reqBody.rider_location_lat;
         rideRequest.riderLocationLng = reqBody.rider_location_lng;

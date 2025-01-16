@@ -16,7 +16,6 @@ async function generateAccessToken() {
     return response.data.access_token
 }
 
-
 exports.createOrder = async () => {
     const accessToken = await generateAccessToken()
 
