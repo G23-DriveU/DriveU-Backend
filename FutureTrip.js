@@ -3,6 +3,7 @@
 //Necessary imports from axios and dotenv are included.
 const axios = require('axios');
 require('dotenv').config();
+const fuelPrices = require('./fuelPrices');
 
 //The API key for Google Maps is retrieved from the environment variables.
 const mapsAPIkey = process.env.MAPS_API_KEY;
@@ -55,6 +56,7 @@ class FutureTrip {
         futureTrip.destinationLng = reqBody.destination_lng
         futureTrip.eta = reqBody.eta;
         futureTrip.distance = reqBody.distance;
+        futureTrip.gasPrice = reqBody.gas_price;
         futureTrip.isFull = reqBody.is_full;
         futureTrip.ets = reqBody.ets;
         return futureTrip;
@@ -113,6 +115,7 @@ class FutureTrip {
 
         //The distance and estimated time of arrival (ETA) are extracted from the API response.
         this.distance = this.metersToMiles(response.data.routes[0].legs[0].distance.value);
+        this.gasPrice = (await fuelPrices.getLocalGasPrices(this.startLocationLat, this.startLocationLng)).result.gasoline;
         this.eta = this.startTime + response.data.routes[0].legs[0].duration.value;
         this.ets = this.eta;
         if (roundTrip == true) {

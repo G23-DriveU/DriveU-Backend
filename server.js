@@ -24,7 +24,6 @@ const FutureTrip = require('./FutureTrip');
 const RideRequest = require('./RideRequest');
 const paypal = require('./paypal');
 const carStats = require('./carStats');
-const fuelPrices = require('./fuelPrices');
 
 //The express app is created and the port is set to 8080.
 const app = express();

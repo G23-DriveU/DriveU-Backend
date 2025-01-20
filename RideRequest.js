@@ -6,7 +6,6 @@ require('dotenv').config();
 
 //The API key for Google Maps is retrieved from the environment variables, and gas cost is initialized.
 const mapsAPIkey = process.env.MAPS_API_KEY;
-let gasCost = 3;
 
 //The RideRequest class is defined.
 class RideRequest {
@@ -145,7 +144,7 @@ class RideRequest {
     //This function prices the trip based on the extra distance and the driver's car's miles per gallon.
     async price(futureTrip) {
         const findUserById = (await import('./database.js')).findUserById;
-        //gasCost = 3; //ADD GAS COST FROM API HERE ====================================
+        let gasCost = futureTrip.gasPrice;
         let driver = await findUserById(futureTrip.driverId);
         this.riderCost = (this.distance - futureTrip.distance) / parseInt(driver.carMpg) * gasCost;
         if (this.roundTrip) this.riderCost *= 2;

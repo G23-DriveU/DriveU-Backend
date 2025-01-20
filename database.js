@@ -101,8 +101,9 @@ const getProfilePic = async (userId) => {
 
 //The insertTestData function inserts a futureTrip object into the database.
 const insertFutureTrip = async (newTrip) => {
-    let result = await client.query('INSERT INTO future_trips (driver_id, start_location, start_location_lat, start_location_lng, destination, destination_lat, destination_lng, start_time, eta, distance, avoid_highways, avoid_tolls, car_capacity, round_trip, is_full, ets) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *',
-        [newTrip.driverId, newTrip.startLocation, newTrip.startLocationLat, newTrip.startLocationLng, newTrip.destination, newTrip.destinationLat, newTrip.destinationLng, newTrip.startTime, newTrip.eta, newTrip.distance, newTrip.avoidHighways, newTrip.avoidTolls, newTrip.carCapacity, newTrip.roundTrip, false, newTrip.ets]);
+    console.log(newTrip.gasPrice);
+    let result = await client.query('INSERT INTO future_trips (driver_id, start_location, start_location_lat, start_location_lng, destination, destination_lat, destination_lng, start_time, eta, distance, gas_price, avoid_highways, avoid_tolls, car_capacity, round_trip, is_full, ets) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *',
+        [newTrip.driverId, newTrip.startLocation, newTrip.startLocationLat, newTrip.startLocationLng, newTrip.destination, newTrip.destinationLat, newTrip.destinationLng, newTrip.startTime, newTrip.eta, newTrip.distance, newTrip.gasPrice, newTrip.avoidHighways, newTrip.avoidTolls, newTrip.carCapacity, newTrip.roundTrip, false, newTrip.ets]);
     if (result.rows.length > 0) {
         result.rows[0] = FutureTrip.createFutureTripFromDatabase(result.rows[0]);
         return result;
@@ -379,6 +380,7 @@ client.connect()
                 start_time BIGINT,
                 eta BIGINT,
                 distance FLOAT,
+                gas_price FLOAT,
                 avoid_highways BOOLEAN,
                 avoid_tolls BOOLEAN,  
                 car_capacity INTEGER,
