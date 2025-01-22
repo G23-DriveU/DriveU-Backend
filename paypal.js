@@ -2,21 +2,26 @@ const axios = require('axios');
 const { response } = require('express');
 
 async function generateAccessToken() {
-    const response = await axios({
-        url: process.env.PAYPAL_BASE_URL + '/v1/oauth2/token',
-        method: 'post',
-        data: 'grant_type=client_credentials',
-        auth: 
-        {
-            username: process.env.PAYPAL_CLIENT_ID,
-            password: process.env.PAYPAL_SECRET
-        },
-    })
+    try {
+        const response = await axios({
+            url: process.env.PAYPAL_BASE_URL + '/v1/oauth2/token',
+            method: 'post',
+            data: 'grant_type=client_credentials',
+            auth: 
+            {
+                username: process.env.PAYPAL_CLIENT_ID,
+                password: process.env.PAYPAL_SECRET
+            },
+        })
 
-    return response.data.access_token
+        return response.data.access_token
+    } catch (e) { 
+        console.error('Error generating access token:', e.response ? e.response.data : e.message); throw e; 
+    }
 }
 
 exports.createOrder = async () => {
+    try {
     const accessToken = await generateAccessToken()
 
     const response = await axios({
@@ -63,6 +68,9 @@ exports.createOrder = async () => {
     })
 
     return response.data.links.find(link => link.rel === 'approve').href
+} catch (e) { 
+    console.error('Error creating paypal order:', e.response ? e.response.data : e.message); throw e; 
+}
 }
 
 exports.authorizeOrder = async (orderId) => {
