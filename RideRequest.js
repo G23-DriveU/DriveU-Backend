@@ -146,7 +146,7 @@ class RideRequest {
         const findUserById = (await import('./database.js')).findUserById;
         let gasCost = futureTrip.gasPrice;
         let driver = await findUserById(futureTrip.driverId);
-        this.riderCost = (this.distance - futureTrip.distance) / parseInt(driver.carMpg) * gasCost;
+        this.riderCost = (this.distance - futureTrip.distance) / parseInt(driver.carMpg) * gasCost * 1.25;
         if (this.roundTrip) this.riderCost *= 2;
         this.driverPayout = this.riderCost * 0.8;
     }

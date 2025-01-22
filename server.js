@@ -181,7 +181,9 @@ app.get('/futureTripsByRadius', async (req, res) => {
         response.count = result.count;
         response.items = [];
         for (let i = 0; i < result.count; i++) {
+            req.query.futureTripId = result.items[i].id;
             response.items[i] = result.items[i];
+            response.items[i].rideRequest = await RideRequest.createRideRequest(req.query);
             response.items[i].driver = await findUserById(response.items[i].driverId);
         }
         response.status = "OK";
@@ -189,7 +191,7 @@ app.get('/futureTripsByRadius', async (req, res) => {
     } catch (error) {  
         response.status = "ERROR";
         response.error = error.toString();
-        console.log("GET FUTURE TRIPS FOR RIDER ERROR", error)
+        console.log("GET FUTURE TRIPS FOR RIDER ERROR", error);
         res.status(500).json(response);
     }
 });
