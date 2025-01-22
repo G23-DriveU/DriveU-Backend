@@ -553,7 +553,7 @@ app.get('/pay', async (req, res) => {
         const url = await paypal.createOrder()
         res.send(url)
     } catch (e) { 
-        res.status(500).send('Internal Server Error')
+        res.status(500).send('Internal Server Error: ' + e)
     }
 })
 
