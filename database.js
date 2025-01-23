@@ -315,6 +315,8 @@ const findRiderTrips = async (userId) => {
     let result = await client.query(query);
     for (let i = 0; i < result.rows.length; i++) {
         result.rows[i] = Trip.createTripFromDatabase(result.rows[i]);
+        result.rows[i].rider = await findUserById(result.rows[i].riderId);
+        result.rows[i].driver = await findUserById(result.rows[i].driverId);
     }
     return result.rows;
 }
