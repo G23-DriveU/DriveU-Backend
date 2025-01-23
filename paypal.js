@@ -20,7 +20,7 @@ async function generateAccessToken() {
     }
 }
 
-exports.createOrder = async () => {
+exports.createOrder = async (tripCost) => {
     try {
     const accessToken = await generateAccessToken()
 
@@ -40,18 +40,18 @@ exports.createOrder = async () => {
                             name: 'Trip1',
                             unit_amount: {
                                 currency_code: 'USD',    
-                                value: '5.00'
+                                value: tripCost
                             },
                             quantity: '1'
                         }
                     ],
                     amount: {
                         currency_code: 'USD',
-                        value: '5.00',
+                        value: tripCost,
                         breakdown: {
                             item_total: {
                                 currency_code: 'USD',
-                                value: '5.00'
+                                value: tripCost
                             }
                         }
                     }

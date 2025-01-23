@@ -510,7 +510,7 @@ app.put('/endTrip', async (req, res) => {
 //The server will redirect to the paypal payment page.
 app.get('/pay', async (req, res) => {
     try {
-        const url = await paypal.createOrder()
+        const url = await paypal.createOrder(req.query.tripCost)
         res.send(url)
     } catch (e) { 
         res.status(500).send('Internal Server Error: ' + e)
