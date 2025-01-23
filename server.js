@@ -7,7 +7,7 @@ TODO
 clean up unit testing and add more
 Add notification functionality
 Incorporate paypal and cost functionality to ride requests
-add edit user info functionality and profile pic functionality
+add profile pic functionality
 automatically cancel future trips 30 mins after and send notis to driver 5 mins before??
 */
 
@@ -15,7 +15,7 @@ automatically cancel future trips 30 mins after and send notis to driver 5 mins 
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const { doesUserExist, insertUser, findUser, findUserById, setProfilePic, getProfilePic, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, acceptRideRequest } = require('./database');
+const { doesUserExist, insertUser, findUser, findUserById, updateUser, setProfilePic, getProfilePic, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, acceptRideRequest } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
@@ -100,6 +100,30 @@ app.post('/users', async (req, res) => {
         response.status = "ERROR";
         response.error = error.toString();
         console.log("POST USER ERROR: ", error);
+        res.status(500).json(response);
+    }
+});
+
+//PUT users will take in user info and update the user in the database, sending database response back to client.
+app.put('/users', async (req, res) => {
+    console.log("PUT USERS: ", req.query);
+    let response = {};
+    try {
+        let result = await updateUser(req.query);
+        if (result.rowCount === 0) {
+            response.status = "ERROR";
+            response.error = "Failed to update user";
+            console.log("UPDATE USER ERROR");
+            res.status(500).json(response);
+            return;
+        }
+        response.status = "OK";
+        response.item = result.rows[0];
+        res.json(response);
+    } catch (error) {
+        response.status = "ERROR";
+        response.error = error.toString();
+        console.log("PUT USER ERROR", error);
         res.status(500).json(response);
     }
 });
