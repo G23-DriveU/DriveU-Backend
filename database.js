@@ -6,6 +6,7 @@ require('dotenv').config();
 const User = require('./User');
 const FutureTrip = require('./FutureTrip');
 const RideRequest = require('./RideRequest');
+const Trip = require('./Trip');
 
 //The PostgreSQL client is initialized with the connection details.
 const client = new Client({
@@ -294,23 +295,42 @@ const deleteRideRequest = async (rideRequestId) => {
     return result;
 }
 
-//NOT WORKING
-const findRiderTrips = async (firebaseUid) => {    
+//The insertTrip function inserts a new trip object into the database.
+const insertTrip = async (newTrip) => {
+    let result = await client.query('INSERT INTO trips (driver_id, rider_id, start_location, start_location_lat, start_location_lng, rider_location, rider_location_lat, rider_location_lng, destination, destination_lat, destination_lng, started_at, picked_up_at, arrived_at, round_trip, dropped_off_at, ended_at, driver_payout, rider_cost, distance) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING *',
+        [newTrip.driverId, newTrip.riderId, newTrip.startLocation, newTrip.startLocationLat, newTrip.startLocationLng, newTrip.riderLocation, newTrip.riderLocationLat, newTrip.riderLocationLng, newTrip.destination, newTrip.destinationLat, newTrip.destinationLng, newTrip.startedAt, newTrip.pickedUpAt, newTrip.arrivedAt, newTrip.roundTrip, newTrip.droppedOffAt, newTrip.endedAt, newTrip.driverPayout, newTrip.riderCost, newTrip.distance]);
+    if (result.rows.length > 0) {
+        result.rows[0] = Trip.createTripFromDatabase(result.rows[0]);
+        return result;
+    }
+    return;
+}
+
+//The findRiderTrips function retrieves all trips for a given rider ID.
+const findRiderTrips = async (userId) => {    
     let query = {
         text: 'SELECT * FROM trips WHERE rider_id = $1',
-        values: [firebaseUid],
+        values: [userId],
     };
     let result = await client.query(query);
+    for (let i = 0; i < result.rows.length; i++) {
+        result.rows[i] = Trip.createTripFromDatabase(result.rows[i]);
+    }
     return result.rows;
 }
 
-//NOT WORKING
-const findDriverTrips = async (firebaseUid) => {
+//The findDriverTrips function retrieves all trips for a given driver ID.
+const findDriverTrips = async (userId) => {
     let query = {
         text: 'SELECT * FROM trips WHERE driver_id = $1',
-        values: [firebaseUid],
+        values: [userId],
     };
     let result = await client.query(query);
+    for (let i = 0; i < result.rows.length; i++) {
+        result.rows[i] = Trip.createTripFromDatabase(result.rows[i]);
+        result.rows[i].rider = await findUserById(result.rows[i].riderId);
+        result.rows[i].driver = await findUserById(result.rows[i].driverId);
+    }
     return result.rows;
 }
 
@@ -429,4 +449,4 @@ client.connect()
     }
 
 //The functions are exported for use in other files.
-module.exports = { close, doesUserExist, insertUser, findUser, findUserById, setProfilePic, getProfilePic, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateFcmToken, acceptRideRequest };
+module.exports = { close, doesUserExist, insertUser, findUser, findUserById, setProfilePic, getProfilePic, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, acceptRideRequest };

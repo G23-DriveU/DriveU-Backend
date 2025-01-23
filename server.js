@@ -4,8 +4,6 @@ This is the server.js file and runs the backend server for DriveU.
 After login, userId from Postgres will be used, NOT firebase_uid
 
 TODO
-fix trip database entries and include transitioning to trip
-fix trip view to find all past trips
 clean up unit testing and add more
 Add notification functionality
 Incorporate paypal and cost functionality to ride requests
@@ -17,11 +15,12 @@ automatically cancel future trips 30 mins after and send notis to driver 5 mins 
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const { doesUserExist, insertUser, findUser, findUserById, setProfilePic, getProfilePic, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, updateFcmToken, acceptRideRequest } = require('./database');
+const { doesUserExist, insertUser, findUser, findUserById, setProfilePic, getProfilePic, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, acceptRideRequest } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
 const RideRequest = require('./RideRequest');
+const Trip = require('./Trip');
 const paypal = require('./paypal');
 const carStats = require('./carStats');
 
@@ -105,33 +104,31 @@ app.post('/users', async (req, res) => {
     }
 });
 
-/*
-//DOESNT WORK
+//GET trips will take in the userId and send all trips for that user to client.
 app.get('/trips', async (req, res) => {
     console.log("GET TRIP: ", req.query);
+    let response = {};
     try {
-        let firebase_uid = req.query.firebase_uid;
-        //get driver trips
-        let user = await findUser(firebase_uid);
+        let user = await findUserById(req.query.userId);
         if (user.length == 0) {
             console.log("User not found");
             res.status(404).send('User not found');
             return;
         }
 
-        let riderTrips = await findRiderTrips(user[0].id);
-        let driverTrips = await findDriverTrips(user[0].id);
-        let response = { 
-            "riderTrips": riderTrips, 
-            "driverTrips": driverTrips
-        };
+        let riderTrips = await findRiderTrips(req.query.userId);
+        let driverTrips = await findDriverTrips(req.query.userId);
+        response.riderTrips = riderTrips;
+        response.driverTrips = driverTrips;
+        response.status = "OK";
         res.json(response);
     } catch (error) {
+        response.status = "ERROR";
+        response.error = error.toString();
         console.log("GET TRIPS ERROR", error)
-        res.status(500).send(error);
+        res.status(500).json(response);
     }
 });
-*/
 
 //GET futureTripsForDriver will take in driverId and send all future trips for that driver to client.
 app.get('/futureTripsForDriver', async (req, res) => {
@@ -188,7 +185,7 @@ app.get('/futureTripsByRadius', async (req, res) => {
         }
         response.status = "OK";
         res.json(response);
-    } catch (error) {  
+    } catch (error) {
         response.status = "ERROR";
         response.error = error.toString();
         console.log("GET FUTURE TRIPS FOR RIDER ERROR", error);
@@ -479,72 +476,35 @@ app.delete('/rideRequestsByDriver', async (req, res) => {
     }
 });
 
-/*
-//DOESNT WORK
-app.post('/trips', async (req, res) => {
-    console.log("POST TRIP: ", req.query);
+//PUT endTrip will end the given future trip and move it to past trips.
+app.put('/endTrip', async (req, res) => {
+    console.log("PUT END TRIP: ", req.query);
+    let response = {};
     try {
-        let { src, dest, avoidHighways, avoidTolls, driver_fbid, rider_fbids } = req.query;
-        //get route info
-        let mapsResponse = await getBestRoute(src, dest, avoidHighways, avoidTolls);
-
-        //find driver in database
-        let driver = await findUser(driver_fbid);
-        if (driver.length == 0) {
-            console.log("Driver not found");
-            res.status(404).send('Driver not found');
+        let futureTrip = await findFutureTrip(req.query.futureTripId);
+        let rideRequest = await findRideRequest(req.query.rideRequestId);
+        let trip = new Trip(futureTrip, rideRequest);
+        result = await insertTrip(trip);
+        if (result.rowCount === 0) {
+            response.status = "ERROR";
+            response.error = "Failed to insert trip";
+            console.log("INSERT TRIP ERROR");
+            res.status(500).json(response);
             return;
         }
-        driver_id = driver[0].id;
-
-        //find riders in database
-        riders_fbid_split = rider_fbids.split("|");
-        riders = [];
-        for (let i = 0; i < riders_fbid_split.length; i++) {
-            let rider = await findUser(riders_fbid_split[i]);
-            if (rider.length == 0) {
-                console.log("Rider not found");
-                res.status(404).send('Rider not found');
-                return;
-            }
-            else {
-                riders.push(rider[0].id);
-            }
-        }
-
-        //insert trip into database
-        let start_location = mapsResponse.routes[0].legs[0].start_address;
-        let destination = mapsResponse.routes[0].legs[0].end_address;
-        let distance = mapsResponse.routes[0].legs[0].distance.value; //meters
-        let started_at = new Date(); // Current time
-        let ended_at = new Date(started_at.getTime() + mapsResponse.routes[0].legs[0].duration.value * 1000); // Adding duration to start time
-        try {
-            let resultTrips = await client.query(
-                'INSERT INTO trips (driver_id, start_location, destination, started_at, ended_at, distance) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-                [driver_id, start_location, destination, started_at, ended_at, distance]
-            );
-            response = [];
-            response.push(resultTrips.rows[0]);
-            
-            //insert trip_passenger into database
-            for (let i = 0; i < riders.length; i++) {
-                let resultUserTrips = await client.query(
-                    'INSERT INTO trip_passenger (trip_id, user_id, start_location, cost, started_at, ended_at, distance, round_trip) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-                    [resultTrips.rows[0].id, riders[i], start_location, 5, started_at, ended_at, distance, true]
-                );
-                response.push(resultUserTrips.rows[0]);
-            }
-            res.status(201).json(response);
-        } catch (error) {
-            console.log("POST TRIP QUERY ERROR");
-            res.status(500).send(error);
-        }
-    } catch (error) {
-        console.log("POST TRIP ERROR")
-        res.status(500).send(error);
+        await deleteFutureTrip(req.query.futureTripId);
+        await deleteRideRequest(req.query.rideRequestId);
+        response.item = result.rows[0];
+        response.status = "OK";
+        res.status(201).json(response);
+    }    
+    catch (error) {
+        response.status = "ERROR";
+        response.error = error.toString();
+        console.log("PUT END TRIP ERROR", error);
+        res.status(500).json(response);
     }
 });
-*/
 
 //PAYPAL FUNCTIONALITY
 //The server will redirect to the paypal payment page.
