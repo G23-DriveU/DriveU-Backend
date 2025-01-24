@@ -8,7 +8,7 @@ clean up unit testing and add more
 Add notification functionality
 Incorporate paypal and cost functionality to ride requests
 add profile pic functionality
-automatically cancel future trips 30 mins after and send notis to driver 5 mins before??
+automatically cancel future trips 30 mins after and send notis to driver 5 mins before?
 */
 
 //Necessary imports are handled for server.js.
