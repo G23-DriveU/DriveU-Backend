@@ -96,28 +96,6 @@ const findUserById = async (userId) => {
     return User.createUserFromDatabase(result.rows[0]);
 }
 
-//UPDATE THIS TO CONVERT AND RETURN VALUE
-//The setProfilePic function updates the profile picture of a user in the database.
-const setProfilePic = async (userId, profilePic) => {
-    let query = {
-        text: 'UPDATE users SET profile_image = $1 WHERE id = $2',
-        values: [profilePic, userId],
-    }
-    let result = await client.query(query);
-    return result;//CHANGE
-}
-
-//The getProfilePic function retrieves the profile picture of a user from the database.
-const getProfilePic = async (userId) => {
-    let query = {
-        text: 'SELECT profile_image FROM users WHERE id = $1',
-        values: [userId],
-    }
-    let result = await client.query(query);
-    return result.rows[0].profile_image;
-}
-
-
 //The insertTestData function inserts a futureTrip object into the database.
 const insertFutureTrip = async (newTrip) => {
     console.log(newTrip.gasPrice);
@@ -467,4 +445,4 @@ client.connect()
     }
 
 //The functions are exported for use in other files.
-module.exports = { close, doesUserExist, insertUser, findUser, findUserById, updateUser, setProfilePic, getProfilePic, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, acceptRideRequest };
+module.exports = { close, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, acceptRideRequest };

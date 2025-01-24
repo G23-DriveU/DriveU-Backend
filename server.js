@@ -15,7 +15,9 @@ automatically cancel future trips 30 mins after and send notis to driver 5 mins 
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const { doesUserExist, insertUser, findUser, findUserById, updateUser, setProfilePic, getProfilePic, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, acceptRideRequest } = require('./database');
+const fs = require('fs');
+const bodyParser = require('body-parser');
+const { doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, acceptRideRequest } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
@@ -35,6 +37,8 @@ app.use(session({
     saveUninitialized: true,
     cookie: { secure: false }
 }));
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use('/uploads', express.static('uploads'));
 
 //A generic welcome message is sent to the client.
 app.get('/', (req, res) => {
@@ -217,35 +221,21 @@ app.get('/futureTripsByRadius', async (req, res) => {
     }
 });
 
-//NEED TO FIX
-//GET profilePic will take in userId and send profile pic to client.
-app.get('/profilePic', async (req, res) => {
-    console.log("GET PROFILE PIC: ", req.query); 
-    let response = {};
-    try {
-        let result = await getProfilePic(req.query.userId);
-        //ERROR HANDLE
-        response.status = "OK";
-        response.item = result;
-        res.json(response);
-    } catch (error) {
-        response.status = "ERROR";
-        response.error = error.toString();
-        console.log("GET PROFILE PIC ERROR", error);
-        res.status(500).json(response);
-    }
-});
-
-//NEED TO FIX
-//POST profilePic will take in userId and profile pic, updating the profile pic in the database.
+//POST profilePic will take in firebaseUid and the new profile picture, and update the user's profile picture in the uploads folder.
 app.post('/profilePic', async (req, res) => {
-    console.log("POST PROFILE PIC: ", req.query);
+    console.log("POST PROFILE PIC: ", req.body);
     let response = {};
     try {
-        let result = await updateProfilePic(req.query.userId, req.query.profilePic);
-        //ERROR HANDLE
+        if (!req.body.profilePic) {
+            response.status = "ERROR";
+            response.error = "Profile picture data is required";
+            return res.status(400).json(response);
+        }
+        let buffer = Buffer.from(req.body.profilePic, 'base64');
+        let outputPath = 'uploads/' + req.body.firebaseUid + '.jpeg';
+        fs.writeFileSync(outputPath, buffer);
+        console.log(`JPEG image saved to ${outputPath}`);
         response.status = "OK";
-        response.item = result;
         res.json(response);
     } catch (error) {
         response.status = "ERROR";
