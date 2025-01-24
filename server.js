@@ -4,7 +4,7 @@ This is the server.js file and runs the backend server for DriveU.
 After login, userId from Postgres will be used, NOT firebase_uid
 
 TODO
-clean up unit testing and add more
+UNIT TESTING
 Add notification functionality
 Incorporate paypal and cost functionality to ride requests
 add profile pic functionality
