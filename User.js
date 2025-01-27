@@ -6,15 +6,18 @@ class User {
     constructor(reqBody) {
         this.firebaseUid = reqBody.firebaseUid;
 
-        this.profileImage = null; //ADD BLOB PROFILE PIC =====================
+        this.profileImage = null;
 
         this.name = reqBody.name;
         this.email = reqBody.email;
         this.phoneNumber = reqBody.phoneNumber;
         this.school = reqBody.school;
         this.fcmToken = reqBody.fcmToken;
-        if (reqBody.driver == 'true' && reqBody.driver != 'false') this.driver = true;
-        else this.driver = false;
+        if (reqBody.driver === 'true' || reqBody.driver === true) {
+            this.driver = true;
+        } else {
+            this.driver = false;
+        }
     }
 
     //This function creates a new User object from the database.

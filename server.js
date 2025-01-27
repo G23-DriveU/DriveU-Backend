@@ -8,7 +8,7 @@ UNIT TESTING
 Add notification functionality
 Incorporate paypal and cost functionality to ride requests
 add profile pic functionality
-automatically cancel future trips 30 mins after and send notis to driver 5 mins before?
+automatically cancel future trips 30 mins after and send notifications to driver 5 mins before?
 */
 
 //Necessary imports are handled for server.js.
@@ -605,7 +605,7 @@ app.get('/api/car-makes/:make/models', async (req, res) => {
         console.error(`Error fetching models for make ${make}:`, error);
         res.status(500).json({ error: `Error fetching models for make ${make}` });
     }
-}); 
+});
 
 // For testing of fuelPrices.js
 app.get('/fuel-prices', async (req, res) => {
