@@ -537,6 +537,7 @@ app.get('/authorize-order', async (req, res) => {
     try {
         const orderId = req.query.token
         req.session.orderId = orderId; // Store order ID in session
+        // ORDERID MUST BE SAVED IN TRIP REQUEST OBJECT IN DB
         const authorizationID = await paypal.authorizeOrder(orderId)
         req.session.authorizationID = authorizationID
         console.log('Authorization ID:', authorizationID);
@@ -570,16 +571,28 @@ app.post('/capture-payment', async (req, res) => {
         }
         //console.log('Capture response:', response);
         const amountReceived = response.seller_receivable_breakdown.net_amount.value
+        //AMOUNT RECIEVED MUST BE SAVED IN CURRENT TRIP OBJECT IN DB
         console.log('Amount received:', amountReceived);
-        paypal.createPayout('sb-driver5033257492@personal.example.com', amountReceived-process.env.PAYPAL_PAYOUT_FEE)
-        res.send('Payment successful')
+        //paypal.createPayout('sb-driver5033257492@personal.example.com', amountReceived-process.env.PAYPAL_PAYOUT_FEE)
+        //res.send('Payment successful')
     } catch (e) {
         res.status(500).send('Error: ' + e);
     }
 });
 
-// not done
+app.post('/payout', async (req, res) => {
+    try {
+        const response = await paypal.createPayout(req.query.email, req.query.amount)
+        console.log('Payout response:', response);
+        res.send('Payout successful')
+    } catch (e) {
+        res.status(500).send('Error: ' + e);
+    }
+});
+
 app.get('/cancel-order', (req, res) => {
+    const orderId = req.query.orderId;
+    const response = paypal.cancelOrder(orderId);
     console.log('Order canceled');
     //res.redirect('/')
 })

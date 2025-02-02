@@ -163,3 +163,23 @@ exports.createPayout= async (recipientEmail, amount) => {
 
     return response.data;
 }
+
+exports.voidAuthorization = async (authorizationId) => {
+    const accessToken = await generateAccessToken();
+
+    try {
+        const response = await axios({
+            url: process.env.PAYPAL_BASE_URL + '/v2/payments/authorizations/' + authorizationId + '/void',
+            method: 'post',
+            headers: {
+                'Authorization': 'Bearer ' + accessToken,
+                'Content-Type': 'application/json'
+            }
+        });
+        //console.log('Void response:', response.data);
+        return response.data;
+    } catch (error) {
+        console.error('Error voiding payment:', error.response ? error.response.data : error.message);
+        throw error;
+    }
+}
