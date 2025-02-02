@@ -574,7 +574,7 @@ app.post('/capture-payment', async (req, res) => {
         //AMOUNT RECIEVED MUST BE SAVED IN CURRENT TRIP OBJECT IN DB
         console.log('Amount received:', amountReceived);
         //paypal.createPayout('sb-driver5033257492@personal.example.com', amountReceived-process.env.PAYPAL_PAYOUT_FEE)
-        //res.send('Payment successful')
+        res.send('Payment captured')
     } catch (e) {
         res.status(500).send('Error: ' + e);
     }
