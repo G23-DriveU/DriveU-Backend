@@ -150,7 +150,7 @@ class RideRequest {
         this.riderCost += futureTrip.distance / parseInt(driver.carMpg) / 2 * gasCost * 1.25;
         
         //Flat rate per hour is added to the cost (twice for round trips)
-        if (futureTrip.roundTrip) {
+        if (this.roundTrip == true) {
             this.riderCost += 1.25 * 0.25 * (this.eta - this.pickupTime) / 60;
         }
         this.riderCost += 1.25 * 0.25 * (this.eta - this.pickupTime) / 60;
