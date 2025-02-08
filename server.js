@@ -25,6 +25,7 @@ const RideRequest = require('./RideRequest');
 const Trip = require('./Trip');
 const paypal = require('./paypal');
 const carStats = require('./carStats');
+const sendNotification = require('./notification.js').sendNotification;
 
 //The express app is created and the port is set to 8080.
 const app = express();
@@ -638,6 +639,23 @@ const server = app.listen(port, (error) => {
         console.log('Something went wrong', error);
     } else {
         console.log(`Server is listening on port ${port}`);
+    }
+});
+
+//The notification endpoint is created for testing purposes.
+app.post("/notification", async (req, res) => {
+    let response = {};
+    try {
+        response.notification = await sendNotification(req.query.title, req.query.body, req.query.token);
+        response.status = "OK";
+        console.log("Notification sent successfully: ", response.notification);
+        res.status(201).json(response);
+    } catch (error) {
+        response = {};
+        console.log("POST NOTIFICATION ERROR: ", error);
+        response.status = "ERROR";
+        response.error = error.toString()
+        res.status(500).json(response);
     }
 });
 
