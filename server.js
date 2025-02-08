@@ -542,7 +542,7 @@ app.get('/authorize-order', async (req, res) => {
         const authorizationID = await paypal.authorizeOrder(orderId)
         req.session.authorizationID = authorizationID
         console.log('Authorization ID:', authorizationID);
-        res.redirect(process.env.BASE_URL + '/after-approval')
+        res.redirect(process.env.BASE_URL + '/after-approval?authId=' + authorizationID)
         //res.send('Order authorized. You can now capture the payment.');
     } catch (e) {
         res.status(500).send('Error: ' + e)
