@@ -156,6 +156,9 @@ class RideRequest {
         this.riderCost += 1.25 * 0.25 * (this.eta - this.pickupTime) / 60;
 
         this.driverPayout = this.riderCost * 0.8;
+
+        this.riderCost = Math.round(this.riderCost * 100) / 100;
+        this.driverPayout = Math.round(this.driverPayout * 100) / 100;
     }
 }
 
