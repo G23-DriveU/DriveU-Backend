@@ -15,6 +15,10 @@ class FutureTrip {
         this.driverId = reqBody.driverId;
         this.startLocation = reqBody.startLocation;
         this.destination = reqBody.destination;
+        this.startLocationLat = parseFloat(reqBody.startLocationLat);
+        this.startLocationLng = parseFloat(reqBody.startLocationLng);
+        this.destinationLat = parseFloat(reqBody.destinationLat);
+        this.destinationLng = parseFloat(reqBody.destinationLng);
         this.carCapacity = reqBody.carCapacity;
         this.startTime = parseInt(reqBody.startTime, 10); //IN SECONDS SINCE EPOCH
         if (reqBody.avoidHighways == 'true') this.avoidHighways = true;
@@ -32,7 +36,9 @@ class FutureTrip {
     //This function creates a new FutureTrip object and calls the getBestRoute function to get the best route from the start location to the destination.
     static async createFutureTrip(reqBody) {
         let newTrip = new FutureTrip(reqBody);
-        await newTrip.getBestRoute(newTrip.startLocation, newTrip.destination, newTrip.roundTrip, newTrip.avoidHighways, newTrip.avoidTolls);
+        let src = `${newTrip.startLocationLat},${newTrip.startLocationLng}`;
+        let dest = `${newTrip.destinationLat},${newTrip.destinationLng}`;
+        await newTrip.getBestRoute(src, dest, newTrip.roundTrip, newTrip.avoidHighways, newTrip.avoidTolls);
         return newTrip;
     }
 
@@ -54,6 +60,8 @@ class FutureTrip {
         futureTrip.startLocationLng = reqBody.start_location_lng;
         futureTrip.destinationLat = reqBody.destination_lat;
         futureTrip.destinationLng = reqBody.destination_lng
+        futureTrip.startLocation = reqBody.start_location;
+        futureTrip.destination = reqBody.destination;
         futureTrip.eta = reqBody.eta;
         futureTrip.distance = reqBody.distance;
         futureTrip.gasPrice = reqBody.gas_price;
@@ -107,11 +115,9 @@ class FutureTrip {
         }
         console.log("Routes API Legs: ", response.data.routes[0].legs);
 
-        //The latitude and longitude of the source and destination are extracted from the API response.
-        this.startLocationLat = response.data.routes[0].legs[0].start_location.lat;
-        this.startLocationLng = response.data.routes[0].legs[0].start_location.lng;
-        this.destinationLat = response.data.routes[0].legs[0].end_location.lat;
-        this.destinationLng = response.data.routes[0].legs[0].end_location.lng;
+        //The addresses of the source and destination are extracted from the API response.
+        this.startLocation = response.data.routes[0].legs[0].start_address;
+        this.destination = response.data.routes[0].legs[0].end_address;
 
         //The distance and estimated time of arrival (ETA) are extracted from the API response.
         this.distance = this.metersToMiles(response.data.routes[0].legs[0].distance.value);

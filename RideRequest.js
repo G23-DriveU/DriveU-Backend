@@ -13,7 +13,8 @@ class RideRequest {
     constructor(reqBody) {
         this.futureTripId = reqBody.futureTripId;
         this.riderId = reqBody.riderId;
-        this.riderLocation = reqBody.riderLocation;
+        this.riderLocationLat = parseFloat(reqBody.riderLat);
+        this.riderLocationLng = parseFloat(reqBody.riderLng);
         this.status = "pending";
 
         //ADD AUTHORIZATION FROM PAYPAL CODE HERE ====================================
@@ -48,7 +49,11 @@ class RideRequest {
 
         //A new RideRequest object is created and the best route and price are calculated.
         let newRideRequest = new RideRequest(reqBody);
-        await newRideRequest.getBestRoute(this.futureTrip.startLocation, newRideRequest.riderLocation, this.futureTrip.destination, newRideRequest.roundTrip, this.futureTrip.startTime, this.futureTrip.avoidHighways, this.futureTrip.avoidTolls);
+        let src = `${this.futureTrip.startLocationLat},${this.futureTrip.startLocationLng}`;
+        let dest = `${this.futureTrip.destinationLat},${this.futureTrip.destinationLng}`;
+        let riderLoc = `${newRideRequest.riderLocationLat},${newRideRequest.riderLocationLng}`;
+
+        await newRideRequest.getBestRoute(src, riderLoc, dest, newRideRequest.roundTrip, this.futureTrip.startTime, this.futureTrip.avoidHighways, this.futureTrip.avoidTolls);
         await newRideRequest.price(this.futureTrip);
         return newRideRequest;
     }
@@ -64,6 +69,7 @@ class RideRequest {
         let rideRequest = new RideRequest(updatedBody);
         rideRequest.status = reqBody.status;
         rideRequest.id = reqBody.id;
+        rideRequest.riderLocation = reqBody.rider_location;
         rideRequest.riderLocationLat = reqBody.rider_location_lat;
         rideRequest.riderLocationLng = reqBody.rider_location_lng;
         rideRequest.roundTrip = reqBody.round_trip;
@@ -79,6 +85,7 @@ class RideRequest {
 
     //This function makes an API call to Google Maps to get the best route from the source to the destination with a stop at the rider's location.
     async getBestRoute(src, stop, dest, roundTrip, startTime, avoidHighways, avoidTolls) {
+        console.log("Getting best route: ", src, stop, dest, roundTrip, startTime, avoidHighways, avoidTolls);
         let avoidStuff = "";
         if (avoidHighways == "true" && avoidTolls == "true") 
             avoidStuff = "tolls|highways";
@@ -86,34 +93,22 @@ class RideRequest {
             avoidStuff = "highways";
         else if (avoidTolls == "true")
             avoidStuff = "tolls";
-        let response = null;
 
         //The API call is made based on whether the trip is a round trip or not.
         if (roundTrip == true) {
             stop = stop + "|" + dest + "|" + stop;
-            response = await axios.get('https://maps.googleapis.com/maps/api/directions/json', {
-                params: {
-                    origin: src, 
-                    destination: src, 
-                    mode: "DRIVE",
-                    waypoints: stop,
-                    key: mapsAPIkey,
-                    avoid: avoidStuff
-                }
-            });
         }
-        else {
-            response = await axios.get('https://maps.googleapis.com/maps/api/directions/json', {
-                params: {
-                    origin: src, 
-                    destination: dest, 
-                    mode: "DRIVE",
-                    waypoints: stop,
-                    key: mapsAPIkey,
-                    avoid: avoidStuff
-                }
-            });
-        }
+
+        let response = await axios.get('https://maps.googleapis.com/maps/api/directions/json', {
+            params: {
+                origin: src, 
+                destination: dest, 
+                mode: "DRIVE",
+                waypoints: stop,
+                key: mapsAPIkey,
+                avoid: avoidStuff
+            }
+        });
 
         //The response status is checked.
         console.log("Routes API Response: ", response.data); 
@@ -123,8 +118,7 @@ class RideRequest {
         console.log("Routes API Response Legs: ", response.data.routes[0].legs); 
 
         //The rider's location is extracted from the API response.
-        this.riderLocationLat = response.data.routes[0].legs[0].end_location.lat;
-        this.riderLocationLng = response.data.routes[0].legs[0].end_location.lng;
+        this.riderLocation = response.data.routes[0].legs[0].end_address;
 
         //The distance is extracted from the API response.
         this.distance = this.metersToMiles(response.data.routes[0].legs[0].distance.value) + this.metersToMiles(response.data.routes[0].legs[1].distance.value);
