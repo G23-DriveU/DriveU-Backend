@@ -27,9 +27,11 @@ class FutureTrip {
         else this.avoidTolls = false;
         if (reqBody.roundTrip == 'true') {
             this.roundTrip = true;
+            this.timeAtDestination = parseFloat(reqBody.timeAtDestination);
         } 
         else {
             this.roundTrip = false;
+            this.timeAtDestination = 0;
         }
     }
 
@@ -62,6 +64,7 @@ class FutureTrip {
         futureTrip.destinationLng = reqBody.destination_lng
         futureTrip.startLocation = reqBody.start_location;
         futureTrip.destination = reqBody.destination;
+        futureTrip.timeAtDestination = reqBody.time_at_destination;
         futureTrip.eta = reqBody.eta;
         futureTrip.distance = reqBody.distance;
         futureTrip.gasPrice = reqBody.gas_price;
@@ -125,7 +128,7 @@ class FutureTrip {
         this.eta = this.startTime + response.data.routes[0].legs[0].duration.value;
         this.ets = this.eta;
         if (roundTrip == true) {
-            this.ets = this.eta + response.data.routes[0].legs[1].duration.value;
+            this.ets = this.eta + this.timeAtDestination + response.data.routes[0].legs[1].duration.value;
         }
     }
 

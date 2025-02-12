@@ -99,8 +99,8 @@ const findUserById = async (userId) => {
 //The insertTestData function inserts a futureTrip object into the database.
 const insertFutureTrip = async (newTrip) => {
     console.log(newTrip.gasPrice);
-    let result = await client.query('INSERT INTO future_trips (driver_id, start_location, start_location_lat, start_location_lng, destination, destination_lat, destination_lng, start_time, eta, distance, gas_price, avoid_highways, avoid_tolls, car_capacity, round_trip, is_full, ets) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *',
-        [newTrip.driverId, newTrip.startLocation, newTrip.startLocationLat, newTrip.startLocationLng, newTrip.destination, newTrip.destinationLat, newTrip.destinationLng, newTrip.startTime, newTrip.eta, newTrip.distance, newTrip.gasPrice, newTrip.avoidHighways, newTrip.avoidTolls, newTrip.carCapacity, newTrip.roundTrip, false, newTrip.ets]);
+    let result = await client.query('INSERT INTO future_trips (driver_id, start_location, start_location_lat, start_location_lng, destination, destination_lat, destination_lng, start_time, eta, time_at_destination, distance, gas_price, avoid_highways, avoid_tolls, car_capacity, round_trip, is_full, ets) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING *',
+        [newTrip.driverId, newTrip.startLocation, newTrip.startLocationLat, newTrip.startLocationLng, newTrip.destination, newTrip.destinationLat, newTrip.destinationLng, newTrip.startTime, newTrip.eta, newTrip.timeAtDestination, newTrip.distance, newTrip.gasPrice, newTrip.avoidHighways, newTrip.avoidTolls, newTrip.carCapacity, newTrip.roundTrip, false, newTrip.ets]);
     if (result.rows.length > 0) {
         result.rows[0] = FutureTrip.createFutureTripFromDatabase(result.rows[0]);
         return result;
@@ -293,8 +293,8 @@ const deleteRideRequest = async (rideRequestId) => {
 
 //The insertTrip function inserts a new trip object into the database.
 const insertTrip = async (newTrip) => {
-    let result = await client.query('INSERT INTO trips (driver_id, rider_id, start_location, start_location_lat, start_location_lng, rider_location, rider_location_lat, rider_location_lng, destination, destination_lat, destination_lng, started_at, picked_up_at, arrived_at, round_trip, dropped_off_at, ended_at, driver_payout, rider_cost, distance) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING *',
-        [newTrip.driverId, newTrip.riderId, newTrip.startLocation, newTrip.startLocationLat, newTrip.startLocationLng, newTrip.riderLocation, newTrip.riderLocationLat, newTrip.riderLocationLng, newTrip.destination, newTrip.destinationLat, newTrip.destinationLng, newTrip.startedAt, newTrip.pickedUpAt, newTrip.arrivedAt, newTrip.roundTrip, newTrip.droppedOffAt, newTrip.endedAt, newTrip.driverPayout, newTrip.riderCost, newTrip.distance]);
+    let result = await client.query('INSERT INTO trips (driver_id, rider_id, start_location, start_location_lat, start_location_lng, rider_location, rider_location_lat, rider_location_lng, destination, destination_lat, destination_lng, started_at, picked_up_at, arrived_at, round_trip, time_at_destination, dropped_off_at, ended_at, driver_payout, rider_cost, distance) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) RETURNING *',
+        [newTrip.driverId, newTrip.riderId, newTrip.startLocation, newTrip.startLocationLat, newTrip.startLocationLng, newTrip.riderLocation, newTrip.riderLocationLat, newTrip.riderLocationLng, newTrip.destination, newTrip.destinationLat, newTrip.destinationLng, newTrip.startedAt, newTrip.pickedUpAt, newTrip.arrivedAt, newTrip.roundTrip, newTrip.timeAtDestination, newTrip.droppedOffAt, newTrip.endedAt, newTrip.driverPayout, newTrip.riderCost, newTrip.distance]);
     if (result.rows.length > 0) {
         result.rows[0] = Trip.createTripFromDatabase(result.rows[0]);
         return result;
@@ -375,6 +375,7 @@ client.connect()
                 picked_up_at BIGINT,
                 arrived_at BIGINT,
                 round_trip BOOLEAN,
+                time_at_destination BIGINT,
                 dropped_off_at BIGINT,
                 ended_at BIGINT,
                 driver_payout FLOAT,
@@ -395,6 +396,7 @@ client.connect()
                 destination_lng FLOAT,
                 start_time BIGINT,
                 eta BIGINT,
+                time_at_destination BIGINT,
                 distance FLOAT,
                 gas_price FLOAT,
                 avoid_highways BOOLEAN,
@@ -430,9 +432,6 @@ client.connect()
             .then(() => client.query(createTripTableQuery))
             .then(() => client.query(createFutureTripsTableQuery))
             .then(() => client.query(createRideRequestTableQuery));
-    })
-    .then(() => {
-        console.log('Tables created successfully');
     })
     .catch((error) => {
         console.log('Error connecting to PostgreSQL or creating tables:', error);

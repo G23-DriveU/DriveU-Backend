@@ -24,6 +24,7 @@ class Trip {
         this.roundTrip = futureTrip.roundTrip;
         this.droppedOffAt = rideRequest.dropoffTime;
         this.endedAt = futureTrip.ets;
+        this.timeAtDestination = futureTrip.timeAtDestination;
         this.driverPayout = rideRequest.driverPayout;
         this.riderCost = rideRequest.riderCost;
         this.distance = rideRequest.distance;
@@ -44,6 +45,7 @@ class Trip {
             arrivedAt: reqBody.arrived_at,
             roundTrip: reqBody.round_trip,
             endedAt: reqBody.endedAt,
+            timeAtDestination: reqBody.time_at_destination,
         };
         let rideRequest = {
             riderId: reqBody.rider_id,
