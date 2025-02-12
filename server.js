@@ -219,6 +219,7 @@ app.get('/futureTripsByRadius', async (req, res) => {
             }
             response.items[response.items.length - 1].driver = await findUserById(response.items[response.items.length - 1].driverId);
         }
+        response.count = response.items.length;
         response.status = "OK";
         res.json(response);
     } catch (error) {
