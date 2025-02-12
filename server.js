@@ -208,16 +208,23 @@ app.get('/futureTripsByRadius', async (req, res) => {
         response.items = [];
         for (let i = 0; i < result.count; i++) {
             req.query.futureTripId = result.items[i].id;
-            response.items[i] = result.items[i];
-            response.items[i].rideRequest = await RideRequest.createRideRequest(req.query);
-            response.items[i].driver = await findUserById(response.items[i].driverId);
+            response.items[response.items.length] = result.items[i];
+            try {
+                response.items[response.items.length - 1].rideRequest = await RideRequest.createRideRequest(req.query);
+            } catch (error) {
+                if (error.toString().trim() == "Error: Rider already requested ride") {
+                    response.items.pop();
+                    continue;
+                }
+            }
+            response.items[response.items.length - 1].driver = await findUserById(response.items[response.items.length - 1].driverId);
         }
         response.status = "OK";
         res.json(response);
     } catch (error) {
         response.status = "ERROR";
         response.error = error.toString();
-        console.log("GET FUTURE TRIPS FOR RIDER ERROR", error);
+        console.log("GET FUTURE TRIPS BY RADIUS ERROR", error);
         res.status(500).json(response);
     }
 });
