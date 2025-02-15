@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { response } = require('express');
+const querystring = require('querystring');
 
 async function generateAccessToken() {
     try {
@@ -19,6 +20,40 @@ async function generateAccessToken() {
         console.error('Error generating access token:', e.response ? e.response.data : e.message); throw e; 
     }
 }
+
+exports.getUserInfo = async (authCode) => {
+    try {
+        const tokenResponse = await axios({
+            url: process.env.PAYPAL_BASE_URL + '/v1/oauth2/token',
+            method: 'post',
+            headers: {
+                'Authorization': 'Basic ' + Buffer
+                  .from(process.env.PAYPAL_CLIENT_ID + ':' + process.env.PAYPAL_SECRET)
+                  .toString('base64'),
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            data: querystring.stringify({
+                grant_type: 'authorization_code',
+                code: authCode
+            })
+        });
+
+        const accessToken = tokenResponse.data.access_token;
+
+        const userInfoResponse = await axios({
+            url: process.env.PAYPAL_BASE_URL + '/v1/identity/openidconnect/userinfo?schema=openid',
+            method: 'get',
+            headers: {
+                'Authorization': 'Bearer ' + accessToken
+            }
+        });
+
+        return userInfoResponse.data;
+    } catch (e) {
+        console.error('Error getting user info:', e.response?.data || e);
+        throw e;
+    }
+};
 
 exports.createOrder = async (tripCost) => {
     try {

@@ -76,7 +76,13 @@ app.post('/users', async (req, res) => {
 
     //User object is created based on if user is a driver.
     let curUser = null;
-    if (req.query.driver == 'true') curUser = new Driver(req.query);
+    if (req.query.driver == 'true') {
+        authCode = req.query.authCode;
+        const driverInfo = await paypal.getUserInfo(authCode);
+        payerId = driverInfo.payer_id;
+        //console.log("PAYPAL PAYER ID: ", payerId);
+        curUser = new Driver(req.query);
+    }
     else curUser = new User(req.query);
     let response = {};
 
