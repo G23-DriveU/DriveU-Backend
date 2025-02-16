@@ -783,6 +783,34 @@ app.put('/dropOffRider', async (req, res) => {
     }
 });
 
+//PUT rateRider will take in riderId and rating, and update the rider's rating in the database.
+app.put('/rateRider', async (req, res) => {
+    console.log("PUT RATE RIDER: ", req.query);
+    let response = {};
+    try {
+        let rider = await findUserById(req.query.riderId);
+        req.query.rating = parseInt(req.query.rating);
+        let newRating = (rider.riderRating * rider.riderReviewCount + req.query.rating) / (rider.riderReviewCount + 1);
+        let result = await updateRiderRating(req.query.riderId, rider.riderReviewCount + 1, newRating);
+        console.log(rider.riderRating, rider.riderReviewCount, req.query.rating, newRating);
+        if (result.rowCount === 0) {
+            response.status = "ERROR";
+            response.error = "Failed to update rider rating";
+            console.log("UPDATE RIDER RATING ERROR");
+            res.status(500).json(response);
+            return;
+        }
+
+        response.status = "OK";
+        res.json(response);
+    } catch (error) {
+        response.status = "ERROR";
+        response.error = error.toString();
+        console.log("PUT RATE RIDER ERROR", error);
+        res.status(500).json(response);
+    }
+});
+
 //PAYPAL FUNCTIONALITY
 //The server will redirect to the paypal payment page.
 app.get('/pay', async (req, res) => {
