@@ -16,7 +16,7 @@ const express = require('express');
 const session = require('express-session');
 const fs = require('fs');
 const bodyParser = require('body-parser');
-const { doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripStartTime, updateRideRequestPickupTime } = require('./database');
+const { doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripTimeAtDestination, updateFutureTripStartTime, updateRideRequestPickupTime } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
@@ -611,7 +611,7 @@ app.put('/reachedDestination', async (req, res) => {
         }
 
         //The ETA is updated in the future trip.
-        let updateStartTime = await updateFutureTripStartTime(rideRequest.futureTripId, req.query.arrivalTime);
+        let updateStartTime = await updateFutureTripETA(rideRequest.futureTripId, req.query.arrivalTime);
         if (updateStartTime.rowCount === 0) {
             response.status = "ERROR";
             response.error = "Failed to update ETA";
@@ -636,6 +636,16 @@ app.put('/reachedDestination', async (req, res) => {
         } else {
             //The trip is ended and moved to past trips.
             try {
+                let updateTAD = await updateFutureTripTimeAtDestination(rideRequest.futureTripId, 0);
+                if (updateTAD.rowCount === 0) {
+                    response.status = "ERROR";
+                    response.error = "Failed to update time at destination";
+                    console.log("UPDATE TIME AT DESTINATION ERROR", error);
+                    res.status(500).json(response);
+                    return;
+                }
+                rideRequest = await findRideRequest(req.query.rideRequestId);
+                futureTrip = await findFutureTrip(rideRequest.futureTripId);
                 let trip = new Trip(futureTrip, rideRequest);
                 result = await insertTrip(trip);
                 if (result.rowCount === 0) {
@@ -674,15 +684,22 @@ app.put('/reachedDestination', async (req, res) => {
     }
 });
 
-//IF NOT ROUND TRIP
-//     END TRIP AND DO RATING (SEND NOTIFICATION TO RIDER TO RATE -> DRIVER WILL ALREADY BE IN APP)
-
-//IF ROUND TRIP
-//     SETUP NOTIFICATION FOR RIDER AND DRIVER AFTER TIME AT DESTINATION
-
 //LEAVE DESTINATION (RIDER INPUT)
 //UPDATE TIME AT DESTINATION 
 //CHANGE STATUS TO LEFT DESTINATION
+app.put('/leaveDestination', async (req, res) => {
+    console.log("PUT LEAVE DESTINATION: ", req.query);
+    let response = {};
+    try {
+        let rideRequest = await getRideRequest(req.query.rideRequestId);
+
+    } catch (error) {
+        response.status = "ERROR";
+        response.error = error.toString();
+        console.log("PUT LEAVE DESTINATION ERROR", error);
+        res.status(500).json(response);
+    }
+});
 
 //DROP OFF RIDER (DRIVER INPUT AND GPS PING DRIVER)
 //UPDATE DROP OFF TIME

@@ -140,11 +140,11 @@ class RideRequest {
         const findUserById = (await import('./database.js')).findUserById;
         let gasCost = futureTrip.gasPrice;
         let driver = await findUserById(futureTrip.driverId);
-        this.riderCost = (this.distance - futureTrip.distance) / parseInt(driver.carMpg) * gasCost * 1.25;
-        this.riderCost += futureTrip.distance / parseInt(driver.carMpg) / 2 * gasCost * 1.25;
+        this.riderCost = (this.distance - futureTrip.distance) / driver.carMpg * gasCost * 1.25;
+        this.riderCost += futureTrip.distance / driver.carMpg / 2 * gasCost * 1.25;
         
         //Flat rate per hour is added to the cost (twice for round trips)
-        if (this.roundTrip == true) {
+        if (this.roundTrip === true) {
             this.riderCost += 1.25 * 0.25 * (this.eta - this.pickupTime) / 60;
         }
         this.riderCost += 1.25 * 0.25 * (this.eta - this.pickupTime) / 60;
