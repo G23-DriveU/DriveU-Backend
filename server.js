@@ -16,7 +16,7 @@ const express = require('express');
 const session = require('express-session');
 const fs = require('fs');
 const bodyParser = require('body-parser');
-const { doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripTimeAtDestination, updateFutureTripStartTime, updateRideRequestPickupTime } = require('./database');
+const { doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripTimeAtDestination, updateFutureTripStartTime, updateRideRequestPickupTime, updateRideRequestDropOffTime, updateRiderRating, updateDriverRating } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
@@ -722,17 +722,41 @@ app.put('/leaveDestination', async (req, res) => {
     }
 });
 
-//DROP OFF RIDER (DRIVER INPUT AND GPS PING DRIVER)
-//UPDATE DROP OFF TIME
-//END TRIP AND DO RATING (SEND NOTIFICATION TO RIDER TO RATE -> DRIVER WILL ALREADY BE IN APP)
-
-//PUT endTrip will end the given future trip and move it to past trips.
-app.put('/endTrip', async (req, res) => {
-    console.log("PUT END TRIP: ", req.query);
+//PUT dropOffRider will take in rideRequestId and update the dropoff time, then move the trip to past trips and send a notification to the rider.
+app.put('/dropOffRider', async (req, res) => {
+    console.log("PUT DROP OFF RIDER: ", req.query);
     let response = {};
     try {
-        let futureTrip = await findFutureTrip(req.query.futureTripId);
+        //The ride request and future trip are retrieved from the database.
         let rideRequest = await findRideRequest(req.query.rideRequestId);
+        let futureTrip = await findFutureTrip(rideRequest.futureTripId);
+
+        //The driver's location is checked to see if they are close enough to the rider's dropoff location.
+        latConversion = 0.1 / 69;
+        lngConversion = 0.1 / (69 * Math.cos(rideRequest.riderLocationLat * Math.PI / 180));
+        let calculation = ((rideRequest.riderLocationLng - req.query.lng) ** 2) / (lngConversion ** 2) + ((rideRequest.riderLocationLat - req.query.lat) ** 2) / (latConversion ** 2);
+        if (calculation > 1) {
+            //The driver is not close enough to the rider's dropoff location.
+            response.status = "ERROR";
+            response.error = "Driver is not close enough to the rider dropoff location";
+            console.log("REACHED DESTINATION ERROR: Driver is not close enough to the rider dropoff location");
+            res.status(500).json(response);
+            return;
+        }
+
+        //The dropoff time is updated in the database.
+        let updateDropOffTime = await updateRideRequestDropOffTime(req.query.rideRequestId, req.query.dropOffTime);
+        if (updateDropOffTime.rowCount === 0) {
+            response.status = "ERROR";
+            response.error = "Failed to update dropoff time";
+            console.log("UPDATE DROPOFF TIME ERROR", error);
+            res.status(500).json(response);
+            return;
+        }
+
+        //The ride request and future trip are converted to a past trip.
+        rideRequest = await findRideRequest(req.query.rideRequestId);
+        futureTrip = await findFutureTrip(rideRequest.futureTripId);
         let trip = new Trip(futureTrip, rideRequest);
         result = await insertTrip(trip);
         if (result.rowCount === 0) {
@@ -742,16 +766,19 @@ app.put('/endTrip', async (req, res) => {
             res.status(500).json(response);
             return;
         }
-        await deleteFutureTrip(req.query.futureTripId);
+        await deleteFutureTrip(rideRequest.futureTripId);
         await deleteRideRequest(req.query.rideRequestId);
         response.item = result.rows[0];
+
+        //SEND NOTIFICATION TO RIDER TO RATE =======================================================================================
+        
         response.status = "OK";
         res.status(201).json(response);
-    }    
-    catch (error) {
+        return;
+    } catch (error) {
         response.status = "ERROR";
         response.error = error.toString();
-        console.log("PUT END TRIP ERROR", error);
+        console.log("PUT DROPOFF RIDER ERROR", error);
         res.status(500).json(response);
     }
 });

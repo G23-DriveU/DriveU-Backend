@@ -78,7 +78,7 @@ class RideRequest {
         rideRequest.riderCost = reqBody.rider_cost;
         rideRequest.driverPayout = reqBody.driver_payout;
         rideRequest.distance = reqBody.distance;
-        rideRequest.dropoffTime = reqBody.dropoff_time;
+        rideRequest.dropOffTime = reqBody.dropoff_time;
         rideRequest.authorizationId = reqBody.authorization_id;
         return rideRequest;
     }

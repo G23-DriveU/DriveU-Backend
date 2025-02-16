@@ -377,6 +377,36 @@ const updateRideRequestPickupTime = async (rideRequestId, newPickupTime) => {
     return result;
 }
 
+//The updateRideRequestDropOffTime function updates the dropoff time of a ride request.
+const updateRideRequestDropOffTime = async (rideRequestId, newDropOffTime) => {
+    let query = {
+        text: 'UPDATE ride_requests SET dropoff_time = $1 WHERE id = $2',
+        values: [newDropOffTime, rideRequestId],
+    };
+    let result = await client.query(query);
+    return result;
+}
+
+//The updateDriverRating function updates the driver rating in the database.
+const updateDriverRating = async (driverId, ratingCount, newRating) => {
+    let query = {
+        text: 'UPDATE users SET driver_rating = $1, driver_review_count = $2 WHERE id = $3',
+        values: [newRating, ratingCount, driverId],
+    }
+    let result = await client.query(query);
+    return result;
+}
+
+//The updateRiderRating function updates the rider rating in the database.
+const updateRiderRating = async (riderId, ratingCount, newRating) => {
+    let query = {
+        text: 'UPDATE users SET rider_rating = $1, rider_review_count = $2 WHERE id = $3',
+        values: [newRating, ratingCount, riderId],
+    }
+    let result = await client.query(query);
+    return result;
+}
+
 //The server connects to the database and creates the necessary tables if they do not exist.
 client.connect()
     .then(() => {
@@ -491,4 +521,4 @@ client.connect()
     }
 
 //The functions are exported for use in other files.
-module.exports = { close, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripStartTime, updateFutureTripTimeAtDestination, updateRideRequestPickupTime };
+module.exports = { close, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripStartTime, updateFutureTripTimeAtDestination, updateRideRequestPickupTime, updateRideRequestDropOffTime, updateRiderRating, updateDriverRating };
