@@ -16,7 +16,7 @@ const express = require('express');
 const session = require('express-session');
 const fs = require('fs');
 const bodyParser = require('body-parser');
-const { doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus,updateFutureTripStartTime, updateRideRequestPickupTime } = require('./database');
+const { doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripStartTime, updateRideRequestPickupTime } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
@@ -533,6 +533,7 @@ app.put('/startTrip', async (req, res) => {
 
         //SEND NOTIFICATION TO RIDER============================================================
 
+        //The ride request status is updated.
         let updateStatus = await updateRideRequestStatus(req.query.rideRequestId, "started");
         if (updateStatus.rowCount === 0) {
             response.status = "ERROR";
@@ -552,9 +553,7 @@ app.put('/startTrip', async (req, res) => {
     }
 });
 
-//PICKUP RIDER (RIDER INPUT)
-//UPDATED RIDER PICKED UP TIME
-//CHANGE STATUS TO PICKED UP
+//PUT pickupRider will take in rideRequestId and update the pickup time, then send a notification to the rider.
 app.put('/pickupRider', async (req, res) => {
     console.log("PUT PICKUP RIDER: ", req.query);
     let response = {};
@@ -569,6 +568,7 @@ app.put('/pickupRider', async (req, res) => {
             return;
         }
 
+        //The ride request status is updated.
         let updateStatus = await updateRideRequestStatus(req.query.rideRequestId, "picked up");
         if (updateStatus.rowCount === 0) {
             response.status = "ERROR";
@@ -588,13 +588,84 @@ app.put('/pickupRider', async (req, res) => {
     }
 });
 
-//REACHED DESTINATION (DRIVER INPUT AND GPS PING?)
-//UPDATE ETA
-//CHANGE STATUS TO AT DESTINATION
+//PUT reachedDestination will take in rideRequestId and update the ETA, ending the trip if one-way, or setting up notifications for round trip.
 app.put('/reachedDestination', async (req, res) => {
     console.log("PUT REACHED DESTINATION: ", req.query);
     let response = {};
     try {
+        //The ride request and future trip are retrieved from the database.
+        let rideRequest = await findRideRequest(req.query.rideRequestId);
+        let futureTrip = await findFutureTrip(rideRequest.futureTripId);
+
+        //The driver's location is checked to see if they are close enough to the destination.
+        latConversion = 0.1 / 69;
+        lngConversion = 0.1 / (69 * Math.cos(futureTrip.destinationLat * Math.PI / 180));
+        let calculation = ((futureTrip.destinationLng - req.query.lng) ** 2) / (lngConversion ** 2) + ((futureTrip.destinationLat - req.query.lat) ** 2) / (latConversion ** 2);
+        if (calculation > 1) {
+            //The driver is not close enough to the destination.
+            response.status = "ERROR";
+            response.error = "Driver is not close enough to the destination";
+            console.log("REACHED DESTINATION ERROR: Driver is not close enough to the destination");
+            res.status(500).json(response);
+            return;
+        }
+
+        //The ETA is updated in the future trip.
+        let updateStartTime = await updateFutureTripStartTime(rideRequest.futureTripId, req.query.arrivalTime);
+        if (updateStartTime.rowCount === 0) {
+            response.status = "ERROR";
+            response.error = "Failed to update ETA";
+            console.log("UPDATE ETA ERROR", error);
+            res.status(500).json(response);
+            return;
+        }
+
+        //The ride request status is updated.
+        let updateStatus = await updateRideRequestStatus(req.query.rideRequestId, "at destination");
+        if (updateStatus.rowCount === 0) {
+            response.status = "ERROR";
+            response.error = "Failed to update status";
+            console.log("UPDATE STATUS ERROR", error);
+            res.status(500).json(response);
+            return;
+        }
+
+        if (rideRequest.roundTrip === true) {
+            //SETUP NOTIFICATION FOR RIDER AND DRIVER AFTER TIME AT DESTINATION============================================================
+
+        } else {
+            //The trip is ended and moved to past trips.
+            try {
+                let trip = new Trip(futureTrip, rideRequest);
+                result = await insertTrip(trip);
+                if (result.rowCount === 0) {
+                    response.status = "ERROR";
+                    response.error = "Failed to insert trip";
+                    console.log("INSERT TRIP ERROR");
+                    res.status(500).json(response);
+                    return;
+                }
+                await deleteFutureTrip(rideRequest.futureTripId);
+                await deleteRideRequest(req.query.rideRequestId);
+                response.item = result.rows[0];
+
+                //SEND NOTIFICATION TO RIDER TO RATE =======================================================================================
+                
+                response.status = "OK";
+                res.status(201).json(response);
+                return;
+            }    
+            catch (error) {
+                response.status = "ERROR";
+                response.error = error.toString();
+                console.log("PUT REACHED DESTINATION ERROR", error);
+                res.status(500).json(response);
+                return;
+            }
+        }
+
+        response.status = "OK";
+        res.json(response);
     } catch (error) {
         response.status = "ERROR";
         response.error = error.toString();

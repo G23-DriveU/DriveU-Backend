@@ -337,6 +337,16 @@ const findDriverTrips = async (userId) => {
     return result.rows;
 }
 
+//The updateFutureTripETA function updates the eta of a future trip to the actual arrival time.
+const updateFutureTripETA = async (futureTripId, arrivalTime) => {
+    let query = {
+        text: 'UPDATE future_trips SET eta = $1 WHERE id = $2',
+        values: [arrivalTime, futureTripId],
+    };
+    let result = await client.query(query);
+    return result;
+}
+
 //The updateFutureTripStartTime function updates the start time of a future trip.
 const updateFutureTripStartTime = async (futureTripId, newStartTime) => {
     let query = {
@@ -471,4 +481,4 @@ client.connect()
     }
 
 //The functions are exported for use in other files.
-module.exports = { close, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripStartTime, updateRideRequestPickupTime };
+module.exports = { close, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripStartTime, updateRideRequestPickupTime };
