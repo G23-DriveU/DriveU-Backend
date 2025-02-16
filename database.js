@@ -67,9 +67,16 @@ const updateUser = async (curUser) => {
             values: [curUser.name, curUser.phoneNumber, curUser.school, curUser.driver, curUser.userId],
         }
     } else {
-        query = {
-            text: 'UPDATE users SET name = $1, phone_number = $2, school = $3, driver = $4, car_color = $5, car_plate = $6, car_make = $7, car_model = $8, car_mpg = 15 WHERE id = $9',
-            values: [curUser.name, curUser.phoneNumber, curUser.school, curUser.driver, curUser.carColor, curUser.carPlate, curUser.carMake, curUser.carModel, curUser.userId],
+        if (curUser.payerId) {
+            query = {
+                text: 'UPDATE users SET name = $1, phone_number = $2, school = $3, driver = $4, car_color = $5, car_plate = $6, car_make = $7, car_model = $8, car_mpg = 15, payer_id = $9 WHERE id = $10',
+                values: [curUser.name, curUser.phoneNumber, curUser.school, curUser.driver, curUser.carColor, curUser.carPlate, curUser.carMake, curUser.carModel, curUser.payerId, curUser.userId],
+            }
+        } else {
+            query = {
+                text: 'UPDATE users SET name = $1, phone_number = $2, school = $3, driver = $4, car_color = $5, car_plate = $6, car_make = $7, car_model = $8, car_mpg = 15 WHERE id = $9',
+                values: [curUser.name, curUser.phoneNumber, curUser.school, curUser.driver, curUser.carColor, curUser.carPlate, curUser.carMake, curUser.carModel, curUser.userId],
+            }
         }
     }
     let result = await client.query(query);

@@ -124,7 +124,12 @@ app.post('/users', async (req, res) => {
 app.put('/users', async (req, res) => {
     console.log("PUT USERS: ", req.query);
     let response = {};
+    let driverInfo = null;
     try {
+        if (req.query.driver == 'true' && req.query.authCode) {
+            driverInfo = await paypal.getUserInfo(req.query.authCode);
+            req.query.payerId = driverInfo.payer_id;
+        }
         let result = await updateUser(req.query);
         if (result.rowCount === 0) {
             response.status = "ERROR";
