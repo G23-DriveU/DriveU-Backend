@@ -278,11 +278,11 @@ const findRideRequestsForRider = async (riderId) => {
     return result;
 }
 
-//The acceptRideRequest function updates the status of a ride request to 'accepted'.
-const acceptRideRequest = async (rideRequestId) => {
+//The acceptRideRequest function updates the status of a ride request.
+const updateRideRequestStatus = async (rideRequestId, status) => {
     let query = {
         text: 'UPDATE ride_requests SET status = $1 WHERE id = $2',
-        values: ['accepted', rideRequestId],
+        values: [status, rideRequestId],
     };
     let result = await client.query(query);
     return result;
@@ -335,6 +335,16 @@ const findDriverTrips = async (userId) => {
         result.rows[i].rider = await findUserById(result.rows[i].riderId);
     }
     return result.rows;
+}
+
+//The updateFutureTripStartTime function updates the start time of a future trip.
+const updateFutureTripStartTime = async (futureTripId, newStartTime) => {
+    let query = {
+        text: 'UPDATE future_trips SET start_time = $1 WHERE id = $2',
+        values: [newStartTime, futureTripId],
+    };
+    let result = await client.query(query);
+    return result;
 }
 
 //The server connects to the database and creates the necessary tables if they do not exist.
@@ -451,4 +461,4 @@ client.connect()
     }
 
 //The functions are exported for use in other files.
-module.exports = { close, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, acceptRideRequest };
+module.exports = { close, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripStartTime };
