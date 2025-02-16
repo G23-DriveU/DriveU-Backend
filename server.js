@@ -684,15 +684,36 @@ app.put('/reachedDestination', async (req, res) => {
     }
 });
 
-//LEAVE DESTINATION (RIDER INPUT)
-//UPDATE TIME AT DESTINATION 
-//CHANGE STATUS TO LEFT DESTINATION
+//PUT leaveDestination will take in rideRequestId and update the time at destination, then update status of the ride request.
 app.put('/leaveDestination', async (req, res) => {
     console.log("PUT LEAVE DESTINATION: ", req.query);
     let response = {};
     try {
-        let rideRequest = await getRideRequest(req.query.rideRequestId);
+        let rideRequest = await findRideRequest(req.query.rideRequestId);
+        let futureTrip = await findFutureTrip(rideRequest.futureTripId);
 
+        //The time at destination is updated.
+        let updateTAD = await updateFutureTripTimeAtDestination(rideRequest.futureTripId, (req.query.leavingTime - futureTrip.eta));
+        if (updateTAD.rowCount === 0) {
+            response.status = "ERROR";
+            response.error = "Failed to update time at destination";
+            console.log("UPDATE TIME AT DESTINATION ERROR");
+            res.status(500).json(response);
+            return;
+        }
+
+        //The ride request status is updated.
+        let updateStatus = await updateRideRequestStatus(req.query.rideRequestId, "left destination");
+        if (updateStatus.rowCount === 0) {
+            response.status = "ERROR";
+            response.error = "Failed to update status";
+            console.log("UPDATE STATUS ERROR");
+            res.status(500).json(response);
+            return;
+        }
+
+        response.status = "OK";
+        res.json(response);
     } catch (error) {
         response.status = "ERROR";
         response.error = error.toString();
