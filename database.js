@@ -347,6 +347,16 @@ const updateFutureTripStartTime = async (futureTripId, newStartTime) => {
     return result;
 }
 
+//The updateRideRequestPickupTime function updates the pickup time of a ride request.
+const updateRideRequestPickupTime = async (rideRequestId, newPickupTime) => {
+    let query = {
+        text: 'UPDATE ride_requests SET pickup_time = $1 WHERE id = $2',
+        values: [newPickupTime, rideRequestId],
+    };
+    let result = await client.query(query);
+    return result;
+}
+
 //The server connects to the database and creates the necessary tables if they do not exist.
 client.connect()
     .then(() => {
@@ -461,4 +471,4 @@ client.connect()
     }
 
 //The functions are exported for use in other files.
-module.exports = { close, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripStartTime };
+module.exports = { close, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripStartTime, updateRideRequestPickupTime };

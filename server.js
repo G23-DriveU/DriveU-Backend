@@ -16,7 +16,7 @@ const express = require('express');
 const session = require('express-session');
 const fs = require('fs');
 const bodyParser = require('body-parser');
-const { doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus,updateFutureTripStartTime } = require('./database');
+const { doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus,updateFutureTripStartTime, updateRideRequestPickupTime } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
@@ -559,6 +559,27 @@ app.put('/pickupRider', async (req, res) => {
     console.log("PUT PICKUP RIDER: ", req.query);
     let response = {};
     try {
+        //The rider's pickup time is updated in the ride request.
+        let updatePickupTime = await updateRideRequestPickupTime(req.query.rideRequestId, req.query.pickupTime);
+        if (updatePickupTime.rowCount === 0) {
+            response.status = "ERROR";
+            response.error = "Failed to update pickup time";
+            console.log("UPDATE PICKUP TIME ERROR", error);
+            res.status(500).json(response);
+            return;
+        }
+
+        let updateStatus = await updateRideRequestStatus(req.query.rideRequestId, "picked up");
+        if (updateStatus.rowCount === 0) {
+            response.status = "ERROR";
+            response.error = "Failed to update status";
+            console.log("UPDATE STATUS ERROR", error);
+            res.status(500).json(response);
+            return;
+        }
+
+        response.status = "OK";
+        res.json(response);
     } catch (error) {
         response.status = "ERROR";
         response.error = error.toString();
