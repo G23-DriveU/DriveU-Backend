@@ -38,6 +38,7 @@ class User {
         user.driverReviewCount = reqBody.driver_review_count;
         user.riderRating = reqBody.rider_rating;
         user.riderReviewCount = reqBody.rider_review_count;
+        user.payerId = reqBody.payer_id;
         user.carColor = reqBody.car_color;
         user.carPlate = reqBody.car_plate;
         user.carMake = reqBody.car_make;

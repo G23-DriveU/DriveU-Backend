@@ -7,7 +7,6 @@ TODO
 UNIT TESTING
 Add notification functionality
 Incorporate paypal and cost functionality to ride requests
-add profile pic functionality
 automatically cancel future trips 30 mins after and send notifications to driver 5 mins before?
 */
 
@@ -77,10 +76,16 @@ app.post('/users', async (req, res) => {
     //User object is created based on if user is a driver.
     let curUser = null;
     if (req.query.driver == 'true') {
-        authCode = req.query.authCode;
-        const driverInfo = await paypal.getUserInfo(authCode);
-        payerId = driverInfo.payer_id;
-        //console.log("PAYPAL PAYER ID: ", payerId);
+        let driverInfo = null;
+        try {
+            driverInfo = await paypal.getUserInfo(req.query.authCode);
+        } catch (error) {
+            response.status = "ERROR";
+            response.error = error.toString();
+            console.log("PAYPAL PAYER ID ERROR: ", error);
+            res.status(500).json(response);
+        }
+        req.query.payerId = driverInfo.payer_id;
         curUser = new Driver(req.query);
     }
     else curUser = new User(req.query);
@@ -613,7 +618,7 @@ app.post('/capture-payment', async (req, res) => {
         }
         //console.log('Capture response:', response);
         const amountReceived = response.seller_receivable_breakdown.net_amount.value
-        //AMOUNT RECIEVED MUST BE SAVED IN CURRENT TRIP OBJECT IN DB
+        //AMOUNT RECEIVED MUST BE SAVED IN CURRENT TRIP OBJECT IN DB
         console.log('Amount received:', amountReceived);
         //paypal.createPayout('sb-driver5033257492@personal.example.com', amountReceived-process.env.PAYPAL_PAYOUT_FEE)
         res.send('Payment captured')

@@ -12,6 +12,7 @@ class Driver extends User {
         this.carPlate = reqBody.carPlate;
         this.carMake = reqBody.carMake;
         this.carModel = reqBody.carModel;
+        this.payerId = reqBody.payerId;
         this.carMpg = 15;
     }
 }

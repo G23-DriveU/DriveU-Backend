@@ -34,13 +34,13 @@ const doesUserExist = async (firebaseUid) => {
 const insertUser = async (curUser) => {
     let result = null;
     if (curUser.driver == true) {
-        result = await client.query('INSERT INTO users (firebase_uid, profile_image, name, email, phone_number, school, fcm_token, driver, driver_rating, driver_review_count, rider_rating, rider_review_count, car_color, car_plate, car_make, car_model, car_mpg) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *', 
-            [curUser.firebaseUid, curUser.profileImage, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.fcmToken, curUser.driver, 0, 0, 0, 0, curUser.carColor, curUser.carPlate, curUser.carMake, curUser.carModel, curUser.carMpg]);
+        result = await client.query('INSERT INTO users (firebase_uid, name, email, phone_number, school, fcm_token, driver, driver_rating, driver_review_count, rider_rating, rider_review_count, car_color, car_plate, car_make, car_model, car_mpg, payer_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *', 
+            [curUser.firebaseUid, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.fcmToken, curUser.driver, 0, 0, 0, 0, curUser.carColor, curUser.carPlate, curUser.carMake, curUser.carModel, curUser.carMpg, curUser.payerId]);
     }
     else {
         //The user is inserted without car details if they are not a driver.
-        result = await client.query('INSERT INTO users (firebase_uid, profile_image, name, email, phone_number, school, fcm_token, driver, rider_rating, rider_review_count) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *', 
-            [curUser.firebaseUid, curUser.profileImage, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.fcmToken, curUser.driver, 0, 0]);
+        result = await client.query('INSERT INTO users (firebase_uid, name, email, phone_number, school, fcm_token, driver, rider_rating, rider_review_count) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', 
+            [curUser.firebaseUid, curUser.name, curUser.email, curUser.phoneNumber, curUser.school, curUser.fcmToken, curUser.driver, 0, 0]);
     }
     return result;
 }
@@ -338,13 +338,13 @@ client.connect()
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 firebase_uid VARCHAR(128) UNIQUE NOT NULL,
-                profile_image BYTEA,
                 name VARCHAR(128),
                 email VARCHAR(128) UNIQUE NOT NULL,
                 phone_number VARCHAR(32),
                 school VARCHAR(100),
                 fcm_token VARCHAR(256),
                 driver BOOLEAN,
+                payer_id VARCHAR(20),
                 driver_rating FLOAT DEFAULT 0,
                 driver_review_count INTEGER DEFAULT 0,
                 rider_rating FLOAT DEFAULT 0,
