@@ -792,7 +792,6 @@ app.put('/rateRider', async (req, res) => {
         req.query.rating = parseInt(req.query.rating);
         let newRating = (rider.riderRating * rider.riderReviewCount + req.query.rating) / (rider.riderReviewCount + 1);
         let result = await updateRiderRating(req.query.riderId, rider.riderReviewCount + 1, newRating);
-        console.log(rider.riderRating, rider.riderReviewCount, req.query.rating, newRating);
         if (result.rowCount === 0) {
             response.status = "ERROR";
             response.error = "Failed to update rider rating";
@@ -807,6 +806,33 @@ app.put('/rateRider', async (req, res) => {
         response.status = "ERROR";
         response.error = error.toString();
         console.log("PUT RATE RIDER ERROR", error);
+        res.status(500).json(response);
+    }
+});
+
+//PUT rateDriver will take in driverId and rating, and update the driver's rating in the database.
+app.put('/rateDriver', async (req, res) => {
+    console.log("PUT RATE DRIVER: ", req.query);
+    let response = {};
+    try {
+        let driver = await findUserById(req.query.driverId);
+        req.query.rating = parseInt(req.query.rating);
+        let newRating = (driver.driverRating * driver.driverReviewCount + req.query.rating) / (driver.driverReviewCount + 1);
+        let result = await updateDriverRating(req.query.driverId, driver.driverReviewCount + 1, newRating);
+        if (result.rowCount === 0) {
+            response.status = "ERROR";
+            response.error = "Failed to update driver rating";
+            console.log("UPDATE DRIVER RATING ERROR");
+            res.status(500).json(response);
+            return;
+        }
+
+        response.status = "OK";
+        res.json(response);
+    } catch (error) {
+        response.status = "ERROR";
+        response.error = error.toString();
+        console.log("PUT RATE DRIVER ERROR", error);
         res.status(500).json(response);
     }
 });
