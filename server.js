@@ -533,6 +533,10 @@ app.put('/startTrip', async (req, res) => {
 
         //SEND NOTIFICATION TO RIDER============================================================
 
+        //CHARGE RIDER WITH PAYPAL AUTH ID =====================================================
+        let riderCost = rideRequest.riderCost;
+        let authId = rideRequest.authorizationId;
+
         //The ride request status is updated.
         let updateStatus = await updateRideRequestStatus(req.query.rideRequestId, "started");
         if (updateStatus.rowCount === 0) {
@@ -660,6 +664,11 @@ app.put('/reachedDestination', async (req, res) => {
                 response.item = result.rows[0];
 
                 //SEND NOTIFICATION TO RIDER TO RATE =======================================================================================
+
+                //SEND PAYPAL PAYOUT TO DRIVER =============================================================================================
+                let driverCost = trip.driverPayout;
+                let driver = await findUserById(trip.driverId);
+                let driverPaypalId = driver.payerId;
                 
                 response.status = "OK";
                 res.status(201).json(response);
@@ -771,6 +780,11 @@ app.put('/dropOffRider', async (req, res) => {
         response.item = result.rows[0];
 
         //SEND NOTIFICATION TO RIDER TO RATE =======================================================================================
+
+        //SEND PAYPAL PAYOUT TO DRIVER =============================================================================================
+        let driverCost = trip.driverPayout;
+        let driver = await findUserById(trip.driverId);
+        let driverPaypalId = driver.payerId;
         
         response.status = "OK";
         res.status(201).json(response);
