@@ -327,6 +327,16 @@ app.delete('/futureTrips', async (req, res) => {
     let response = {};
     console.log("DELETE FUTURE TRIPS: ", req.query);
     try {
+        let result = await findRideRequestsForTrip(req.query.futureTripId);
+        for (let i = 0; i < result.items.length; i++) {
+            let authId = result.items[i].authorizationId;
+            //VOID PAYMENT========================================================================
+
+            if (result.items[i].status == "accepted") {
+                //SEND NOTIFICATION TO RIDER THAT IT IS CANCELLED ============================================================
+            }
+        }
+
         await deleteFutureTrip(req.query.futureTripId);
         response.status = "OK";
         res.json(response);
@@ -483,6 +493,10 @@ app.delete('/rideRequestsByRider', async (req, res) => {
     console.log("DELETE RIDE REQUEST BY RIDER: ", req.query);
     let response = {};
     try {
+        let rideRequest = await findRideRequest(req.query.rideRequestId);
+        let authId = rideRequest.authorizationId;
+        //VOID PAYMENT========================================================================
+
         await deleteRideRequest(req.query.rideRequestId);
         response.status = "OK";
         res.json(response);
@@ -500,6 +514,9 @@ app.delete('/rideRequestsByDriver', async (req, res) => {
     console.log("DELETE RIDE REQUEST BY DRIVER: ", req.query);
     let response = {};
     try {
+        let rideRequest = await findRideRequest(req.query.rideRequestId);
+        let authId = rideRequest.authorizationId;
+        //VOID PAYMENT========================================================================
         let result = await deleteRideRequest(req.query.rideRequestId);
 
         //SEND NOTIFICATION TO RIDER============================================================
