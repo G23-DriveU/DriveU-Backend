@@ -472,7 +472,7 @@ app.put('/acceptRideRequest', async (req, res) => {
             res.status(500).json(response);
             return;
         }
-        result.futureTrip = await setFutureTripFull(futureTrip.id);
+        result.futureTrip = await setFutureTripFull(futureTrip.id, true);
         if (result.futureTrip.rowCount === 0) {
             response.status = "ERROR";
             response.error = "Failed to set future trip to full";
@@ -506,6 +506,25 @@ app.delete('/rideRequestsByRider', async (req, res) => {
         let rideRequest = await findRideRequest(req.query.rideRequestId);
         let authId = rideRequest.authorizationId;
         //VOID PAYMENT========================================================================
+
+        if (rideRequest.status == "accepted") {
+            let futureTrip = await findFutureTrip(rideRequest.futureTripId);
+            
+            //We set the future trip to not full.
+            let full = setFutureTripFull(futureTrip.id, false);
+            if (full.rowCount === 0) {
+                response.status = "ERROR";
+                response.error = "Failed to set future trip to not full";
+                console.log("SET FUTURE TRIP NOT FULL ERROR");
+                res.status(500).json(response);
+                return;
+            }
+            
+            let driver = await findUserById(futureTrip.driverId);
+            let rider = await findUserById(rideRequest.riderId);
+            let driverFcm = driver.fcmToken;
+            //NOTIFY DRIVER THAT RIDER HAS CANCELLED ====================================================================
+        }
 
         await deleteRideRequest(req.query.rideRequestId);
         response.status = "OK";
@@ -565,8 +584,9 @@ app.put('/startTrip', async (req, res) => {
         let rider = await findUserById(rideRequest.riderId);
         let riderFcm = rider.fcmToken;
         let futureTrip = await findFutureTrip(rideRequest.futureTripId);
+        let eta = rideRequest.pickupTime;
         let driver = await findUserById(futureTrip.driverId);
-        //SEND NOTIFICATION TO RIDER============================================================
+        //SEND NOTIFICATION TO RIDER OF DRIVER PICKUP TIME ============================================================
 
         //CHARGE RIDER WITH PAYPAL AUTH ID =====================================================
         let riderCost = rideRequest.riderCost;
@@ -592,7 +612,7 @@ app.put('/startTrip', async (req, res) => {
     }
 });
 
-//PUT pickupRider will take in rideRequestId and update the pickup time, then send a notification to the rider.
+//PUT pickupRider will take in rideRequestId and update the pickup time.
 app.put('/pickupRider', async (req, res) => {
     console.log("PUT PICKUP RIDER: ", req.query);
     let response = {};

@@ -183,11 +183,11 @@ const findFutureTripsByRadius = async (riderId, radius, lat, lng, roundTrip) => 
     return result;
 }
 
-//The setFutureTripFull function updates the is_full attribute of a future trip to true.
-const setFutureTripFull = async (futureTripId) => {
+//The setFutureTripFull function updates the is_full attribute of a future trip to the given value.
+const setFutureTripFull = async (futureTripId, full) => {
     let query = {
         text: 'UPDATE future_trips SET is_full = $1 WHERE id = $2',
-        values: [true, futureTripId],
+        values: [full, futureTripId],
     };
     let result = await client.query(query);
     return result;
@@ -196,7 +196,7 @@ const setFutureTripFull = async (futureTripId) => {
 //The deleteFutureTrip function deletes a future trip and all associated ride requests from the database.
 const deleteFutureTrip = async (futureTripId) => {
     let result = {};
-    
+
     //All ride requests associated with the trip are deleted.
     let query = {
         text: 'DELETE FROM ride_requests WHERE future_trip_id = $1',
