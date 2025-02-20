@@ -333,7 +333,11 @@ app.delete('/futureTrips', async (req, res) => {
             //VOID PAYMENT========================================================================
 
             if (result.items[i].status == "accepted") {
-                //SEND NOTIFICATION TO RIDER THAT IT IS CANCELLED ============================================================
+                let rideRequest = result.items[i];
+                let futureTrip = await findFutureTrip(rideRequest.futureTripId);
+                let rider = await findUserById(rideRequest.riderId);
+                let riderFcm = rider.fcmToken;
+                //SEND NOTIFICATION TO RIDER THAT THE FUTURE TRIP IS CANCELLED ============================================================
             }
         }
 
@@ -391,7 +395,11 @@ app.post('/rideRequests', async (req, res) => {
     try {
         let newRideRequest = await RideRequest.createRideRequest(req.query);
 
-        //SEND NOTIFICATION TO DRIVER============================================================
+        let futureTrip = await findFutureTrip(newRideRequest.futureTripId);
+        let rider = await findUserById(newRideRequest.riderId);
+        let driver = await findUserById(futureTrip.driverId);
+        let driverFcm = driver.fcmToken;
+        //SEND NOTIFICATION TO DRIVER FOR NEW RIDE REQUEST ============================================================
 
         result = await insertRideRequest(newRideRequest);
         if (result.rowCount === 0) {
@@ -473,7 +481,9 @@ app.put('/acceptRideRequest', async (req, res) => {
             return;
         }
 
-        //SEND NOTIFICATION TO RIDER============================================================
+        let rider = await findUserById(rideRequest.riderId);
+        let riderFcm = rider.fcmToken;
+        //SEND NOTIFICATION TO RIDER THAT REQUEST IS ACCEPTED ============================================================
 
         //The response is sent to the client.
         response.status = "OK";
@@ -519,7 +529,11 @@ app.delete('/rideRequestsByDriver', async (req, res) => {
         //VOID PAYMENT========================================================================
         let result = await deleteRideRequest(req.query.rideRequestId);
 
-        //SEND NOTIFICATION TO RIDER============================================================
+        let rider = await findUserById(rideRequest.riderId);
+        let riderFcm = rider.fcmToken;
+        let futureTrip = await findFutureTrip(rideRequest.futureTripId);
+        let driver = await findUserById(futureTrip.driverId);
+        //SEND NOTIFICATION TO RIDER THAT REQUEST IS REJECTED ============================================================
 
         response.status = "OK";
         res.json(response);
@@ -548,6 +562,10 @@ app.put('/startTrip', async (req, res) => {
             return;
         }
 
+        let rider = await findUserById(rideRequest.riderId);
+        let riderFcm = rider.fcmToken;
+        let futureTrip = await findFutureTrip(rideRequest.futureTripId);
+        let driver = await findUserById(futureTrip.driverId);
         //SEND NOTIFICATION TO RIDER============================================================
 
         //CHARGE RIDER WITH PAYPAL AUTH ID =====================================================
@@ -652,6 +670,11 @@ app.put('/reachedDestination', async (req, res) => {
         }
 
         if (rideRequest.roundTrip === true) {
+            let rider = await findUserById(rideRequest.riderId);
+            let driver = await findUserById(futureTrip.driverId);
+            let riderFcm = rider.fcmToken;
+            let driverFcm = driver.fcmToken;
+            let notificationTime = req.query.arrivalTime + futureTrip.timeAtDestination; //in seconds from epoch
             //SETUP NOTIFICATION FOR RIDER AND DRIVER AFTER TIME AT DESTINATION============================================================
 
         } else {
@@ -680,12 +703,15 @@ app.put('/reachedDestination', async (req, res) => {
                 await deleteRideRequest(req.query.rideRequestId);
                 response.item = result.rows[0];
 
-                //SEND NOTIFICATION TO RIDER TO RATE =======================================================================================
-
                 //SEND PAYPAL PAYOUT TO DRIVER =============================================================================================
                 let driverCost = trip.driverPayout;
                 let driver = await findUserById(trip.driverId);
                 let driverPaypalId = driver.payerId;
+
+                let rider = await findUserById(trip.riderId);
+                let riderFcm = rider.fcmToken;
+                //SEND NOTIFICATION TO RIDER TO RATE =======================================================================================
+
                 
                 response.status = "OK";
                 res.status(201).json(response);
@@ -796,12 +822,14 @@ app.put('/dropOffRider', async (req, res) => {
         await deleteRideRequest(req.query.rideRequestId);
         response.item = result.rows[0];
 
-        //SEND NOTIFICATION TO RIDER TO RATE =======================================================================================
-
         //SEND PAYPAL PAYOUT TO DRIVER =============================================================================================
         let driverCost = trip.driverPayout;
         let driver = await findUserById(trip.driverId);
         let driverPaypalId = driver.payerId;
+
+        let rider = await findUserById(trip.riderId);
+        let riderFcm = rider.fcmToken;
+        //SEND NOTIFICATION TO RIDER TO RATE =======================================================================================
         
         response.status = "OK";
         res.status(201).json(response);

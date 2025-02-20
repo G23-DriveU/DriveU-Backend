@@ -196,9 +196,7 @@ const setFutureTripFull = async (futureTripId) => {
 //The deleteFutureTrip function deletes a future trip and all associated ride requests from the database.
 const deleteFutureTrip = async (futureTripId) => {
     let result = {};
-
-    //NOTIFY USERS WITH RIDE REQUESTS THAT THE TRIP HAS BEEN DELETED=========================================
-
+    
     //All ride requests associated with the trip are deleted.
     let query = {
         text: 'DELETE FROM ride_requests WHERE future_trip_id = $1',
