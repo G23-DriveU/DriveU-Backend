@@ -6,7 +6,7 @@ After login, userId from Postgres will be used, NOT firebase_uid
 TODO
 UNIT TESTING
 Add notification functionality
-Incorporate paypal and cost functionality to ride requests
+Incorporate paypal and cost functionality to ride requests (completed payment voiding and capturing, still need to implement payouts)
 automatically cancel future trips 30 mins after and send notifications to driver 5 mins before?
 */
 
@@ -330,7 +330,15 @@ app.delete('/futureTrips', async (req, res) => {
         let result = await findRideRequestsForTrip(req.query.futureTripId);
         for (let i = 0; i < result.items.length; i++) {
             let authId = result.items[i].authorizationId;
-            //VOID PAYMENT========================================================================
+            //void payment
+            let voidPaymentResult = await paypal.voidPayment(authId);
+            if (voidPaymentResult.error) {
+                response.status = "ERROR";
+                response.error = "Failed to void payment";
+                console.log("VOID PAYMENT ERROR", error);
+                res.status(500).json(response);
+                return;
+            }
 
             if (result.items[i].status == "accepted") {
                 let rideRequest = result.items[i];
@@ -505,7 +513,15 @@ app.delete('/rideRequestsByRider', async (req, res) => {
     try {
         let rideRequest = await findRideRequest(req.query.rideRequestId);
         let authId = rideRequest.authorizationId;
-        //VOID PAYMENT========================================================================
+        //void payment
+        let voidPaymentResult = await paypal.voidPayment(authId);
+        if (voidPaymentResult.error) {
+            response.status = "ERROR";
+            response.error = "Failed to void payment";
+            console.log("VOID PAYMENT ERROR", error);
+            res.status(500).json(response);
+            return;
+        }
 
         if (rideRequest.status == "accepted") {
             let futureTrip = await findFutureTrip(rideRequest.futureTripId);
@@ -545,7 +561,16 @@ app.delete('/rideRequestsByDriver', async (req, res) => {
     try {
         let rideRequest = await findRideRequest(req.query.rideRequestId);
         let authId = rideRequest.authorizationId;
-        //VOID PAYMENT========================================================================
+        //void payment
+        let voidPaymentResult = await paypal.voidPayment(authId);
+        if (voidPaymentResult.error) {
+            response.status = "ERROR";
+            response.error = "Failed to void payment";
+            console.log("VOID PAYMENT ERROR", error);
+            res.status(500).json(response);
+            return;
+        }
+
         let result = await deleteRideRequest(req.query.rideRequestId);
 
         let rider = await findUserById(rideRequest.riderId);
@@ -588,7 +613,15 @@ app.put('/startTrip', async (req, res) => {
             let rideRequest = existingRideRequests.items[i];
             if (rideRequest.status == "pending") {
                 let authId = rideRequest.authorizationId;
-                //VOID PAYMENT========================================================================
+                //void all other payments
+                let voidOtherPaymentsResult= await paypal.voidPayment(authId);
+                if (voidOtherPaymentsResult.error) {
+                    response.status = "ERROR";
+                    response.error = "Failed to void other payments";
+                    console.log("VOID PAYMENT ERROR", error);
+                    res.status(500).json(response);
+                    return;
+                }
 
                 let riderFcm = await rideRequest.rider.fcmToken;
                 //SEND NOTIFICATION TO RIDER THAT THEIR RIDE REQUEST IS REJECTED ============================================================
@@ -610,9 +643,9 @@ app.put('/startTrip', async (req, res) => {
         let driver = await findUserById(futureTrip.driverId);
         //SEND NOTIFICATION TO RIDER OF DRIVER PICKUP TIME ============================================================
 
-        //CHARGE RIDER WITH PAYPAL AUTH ID =====================================================
-        let riderCost = rideRequest.riderCost;
+        //charge rider for trip
         let authId = rideRequest.authorizationId;
+        let paymentCaptureResult = await paypal.capturePayment(authId);
 
         //The ride request status is updated.
         let updateStatus = await updateRideRequestStatus(req.query.rideRequestId, "started");

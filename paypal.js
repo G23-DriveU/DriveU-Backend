@@ -2,6 +2,9 @@ const axios = require('axios');
 const { response } = require('express');
 const querystring = require('querystring');
 
+// TODO
+// add automatic reauthirization if expired.
+
 async function generateAccessToken() {
     try {
         const response = await axios({
