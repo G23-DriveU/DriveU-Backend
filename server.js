@@ -581,9 +581,31 @@ app.put('/startTrip', async (req, res) => {
             return;
         }
 
+        //All pending ride requests for the future trip are removed.
+        let existingRideRequests = await findRideRequestsForTrip(rideRequest.futureTripId);
+        let futureTrip = await findFutureTrip(rideRequest.futureTripId);
+        for (let i = 0; i < existingRideRequests.count; i++) {
+            let rideRequest = existingRideRequests.items[i];
+            if (rideRequest.status == "pending") {
+                let authId = rideRequest.authorizationId;
+                //VOID PAYMENT========================================================================
+
+                let riderFcm = await rideRequest.rider.fcmToken;
+                //SEND NOTIFICATION TO RIDER THAT THEIR RIDE REQUEST IS REJECTED ============================================================
+
+                let result = await deleteRideRequest(rideRequest.id);
+                if (result.rowCount === 0) {
+                    response.status = "ERROR";
+                    response.error = "Failed to delete pending ride request";
+                    console.log("DELETE RIDE REQUEST ERROR", error);
+                    res.status(500).json(response);
+                    return;
+                }
+            }
+        }
+
         let rider = await findUserById(rideRequest.riderId);
         let riderFcm = rider.fcmToken;
-        let futureTrip = await findFutureTrip(rideRequest.futureTripId);
         let eta = rideRequest.pickupTime;
         let driver = await findUserById(futureTrip.driverId);
         //SEND NOTIFICATION TO RIDER OF DRIVER PICKUP TIME ============================================================
