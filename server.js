@@ -407,8 +407,20 @@ app.post('/rideRequests', async (req, res) => {
         let rider = await findUserById(newRideRequest.riderId);
         let driver = await findUserById(futureTrip.driverId);
         let driverFcm = driver.fcmToken;
+        
         //SEND NOTIFICATION TO DRIVER FOR NEW RIDE REQUEST ============================================================
-
+        try{
+            const notification = await sendNotification(
+                "New Ride Request",
+                `${rider.name} has requested to join your ride`,
+                driverFcm
+            );
+            console.log("NOTIFICATION SENT: ", notification);
+            
+        }catch(error){
+            console.log("NOTIFICATION ERROR: ", error);
+        }
+        
         result = await insertRideRequest(newRideRequest);
         if (result.rowCount === 0) {
             response.status = "ERROR";
