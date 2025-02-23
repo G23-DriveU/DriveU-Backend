@@ -331,7 +331,7 @@ app.delete('/futureTrips', async (req, res) => {
         for (let i = 0; i < result.items.length; i++) {
             let authId = result.items[i].authorizationId;
             //void payment
-            let voidPaymentResult = await paypal.voidPayment(authId);
+            let voidPaymentResult = await paypal.voidAuthorization(authId);
             if (voidPaymentResult.error) {
                 response.status = "ERROR";
                 response.error = "Failed to void payment";
@@ -536,7 +536,7 @@ app.delete('/rideRequestsByRider', async (req, res) => {
         let rideRequest = await findRideRequest(req.query.rideRequestId);
         let authId = rideRequest.authorizationId;
         //void payment
-        let voidPaymentResult = await paypal.voidPayment(authId);
+        let voidPaymentResult = await paypal.voidAuthorization(authId);
         if (voidPaymentResult.error) {
             response.status = "ERROR";
             response.error = "Failed to void payment";
@@ -584,7 +584,7 @@ app.delete('/rideRequestsByDriver', async (req, res) => {
         let rideRequest = await findRideRequest(req.query.rideRequestId);
         let authId = rideRequest.authorizationId;
         //void payment
-        let voidPaymentResult = await paypal.voidPayment(authId);
+        let voidPaymentResult = await paypal.voidAuthorization(authId);
         if (voidPaymentResult.error) {
             response.status = "ERROR";
             response.error = "Failed to void payment";
@@ -636,7 +636,7 @@ app.put('/startTrip', async (req, res) => {
             if (rideRequest.status == "pending") {
                 let authId = rideRequest.authorizationId;
                 //void all other payments
-                let voidOtherPaymentsResult= await paypal.voidPayment(authId);
+                let voidOtherPaymentsResult= await paypal.voidAuthorization(authId);
                 if (voidOtherPaymentsResult.error) {
                     response.status = "ERROR";
                     response.error = "Failed to void other payments";
