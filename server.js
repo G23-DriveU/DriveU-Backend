@@ -502,12 +502,13 @@ app.put('/acceptRideRequest', async (req, res) => {
         }
 
         let rider = await findUserById(rideRequest.riderId);
+        let driver = await findUserById(futureTrip.driverId);
         let riderFcm = rider.fcmToken;
         //SEND NOTIFICATION TO RIDER THAT REQUEST IS ACCEPTED ============================================================
         try{
             const notification = await sendNotification(
                 "Ride Request Accepted",
-                `${Driver.name} has accepted your ride request`,
+                `${driver.name} has accepted your ride request`,
                 riderFcm
             );
             console.log("NOTIFICATION SENT: ", notification);
