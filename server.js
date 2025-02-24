@@ -617,8 +617,17 @@ app.put('/startTrip', async (req, res) => {
     console.log("PUT START TRIP: ", req.query);
     let response = {};
     try {
+        //The accepted ride request is found using the futureTripId.
+        let rideRequests = (await findRideRequestsForTrip(req.query.futureTripId)).items;
+        let rideRequest = null;
+        for (let i = 0; i < rideRequests.length; i++) {
+            if (rideRequests[i].status == "accepted") {
+                rideRequest = rideRequests[i];
+                console.log("Accepted ride request: ", rideRequest);
+            }
+        }
+
         //The ride request is found and the future trip start time is updated.
-        let rideRequest = await findRideRequest(req.query.rideRequestId);
         let updateStartTime = await updateFutureTripStartTime(rideRequest.futureTripId, req.query.startTime);
         if (updateStartTime.rowCount === 0) {
             response.status = "ERROR";
@@ -670,11 +679,11 @@ app.put('/startTrip', async (req, res) => {
         let paymentCaptureResult = await paypal.capturePayment(authId);
 
         //The ride request status is updated.
-        let updateStatus = await updateRideRequestStatus(req.query.rideRequestId, "started");
+        let updateStatus = await updateRideRequestStatus(rideRequest.id, "started");
         if (updateStatus.rowCount === 0) {
             response.status = "ERROR";
             response.error = "Failed to update status";
-            console.log("UPDATE STATUS ERROR", error);
+            console.log("UPDATE STATUS ERROR");
             res.status(500).json(response);
             return;
         }

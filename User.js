@@ -6,8 +6,6 @@ class User {
     constructor(reqBody) {
         this.firebaseUid = reqBody.firebaseUid;
 
-        this.profileImage = null;
-
         this.name = reqBody.name;
         this.email = reqBody.email;
         this.phoneNumber = reqBody.phoneNumber;
@@ -24,7 +22,6 @@ class User {
     static createUserFromDatabase(reqBody) {
         let updatedBody = {
             firebaseUid: reqBody.firebase_uid,
-            profileImage: reqBody.profile_image,
             name: reqBody.name,
             email: reqBody.email,
             phoneNumber: reqBody.phone_number,
