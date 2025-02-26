@@ -682,7 +682,18 @@ app.put('/startTrip', async (req, res) => {
 
                 let riderFcm = await rideRequest.rider.fcmToken;
                 //SEND NOTIFICATION TO RIDER THAT THEIR RIDE REQUEST IS REJECTED ============================================================
-
+                
+                try{
+                    const notification = await sendNotification(
+                        "Ride Request Timed Out",
+                        `Your pending ride request has timed out due to the driver accepting a different rider`,
+                        riderFcm
+                    );
+                    console.log("NOTIFICATION SENT: ", notification);
+                    
+                }catch(error){
+                    console.log("NOTIFICATION ERROR: ", error);
+                }
                 let result = await deleteRideRequest(rideRequest.id);
                 if (result.rowCount === 0) {
                     response.status = "ERROR";
