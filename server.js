@@ -865,7 +865,18 @@ app.put('/reachedDestination', async (req, res) => {
                 let rider = await findUserById(trip.riderId);
                 let riderFcm = rider.fcmToken;
                 //SEND NOTIFICATION TO RIDER TO RATE =======================================================================================
-
+                
+                try{
+                    const notification = await sendNotification(
+                        "Rate Your Ride",
+                        `Please give ${driver.name} a rating`,
+                        riderFcm
+                    );
+                    console.log("NOTIFICATION SENT: ", notification);
+                    
+                }catch(error){
+                    console.log("NOTIFICATION ERROR: ", error);
+                }
                 
                 response.status = "OK";
                 res.status(201).json(response);
