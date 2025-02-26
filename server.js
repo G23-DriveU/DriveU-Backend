@@ -615,6 +615,18 @@ app.delete('/rideRequestsByDriver', async (req, res) => {
         let driver = await findUserById(futureTrip.driverId);
         //SEND NOTIFICATION TO RIDER THAT REQUEST IS REJECTED ============================================================
 
+        try{
+            const notification = await sendNotification(
+                "Ride Request Rejected",
+                `${driver.name} has rejected your ride request`,
+                riderFcm
+            );
+            console.log("NOTIFICATION SENT: ", notification);
+            
+        }catch(error){
+            console.log("NOTIFICATION ERROR: ", error);
+        }
+        
         response.status = "OK";
         res.json(response);
     }
