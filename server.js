@@ -710,7 +710,18 @@ app.put('/startTrip', async (req, res) => {
         let eta = rideRequest.pickupTime;
         let driver = await findUserById(futureTrip.driverId);
         //SEND NOTIFICATION TO RIDER OF DRIVER PICKUP TIME ============================================================
-
+        
+        try{
+            const notification = await sendNotification(
+                "Pickup Time Update",
+                `${driver.name} is estimated to pick you up at ${eta}`,
+                riderFcm
+            );
+            console.log("NOTIFICATION SENT: ", notification);
+            
+        }catch(error){
+            console.log("NOTIFICATION ERROR: ", error);
+        }
         //charge rider for trip
         let authId = rideRequest.authorizationId;
         let paymentCaptureResult = await paypal.capturePayment(authId);
