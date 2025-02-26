@@ -346,7 +346,20 @@ app.delete('/futureTrips', async (req, res) => {
                 let rider = await findUserById(rideRequest.riderId);
                 let riderFcm = rider.fcmToken;
                 //SEND NOTIFICATION TO RIDER THAT THE FUTURE TRIP IS CANCELLED ============================================================
+                
+                try{
+                    const notification = await sendNotification(
+                        "Ride Cancelled",
+                        `Yor upcoming ride has been cancelled`,
+                        riderFcm
+                    );
+                    console.log("NOTIFICATION SENT: ", notification);
+                    
+                }catch(error){
+                    console.log("NOTIFICATION ERROR: ", error);
+                }
             }
+
         }
 
         await deleteFutureTrip(req.query.futureTripId);
