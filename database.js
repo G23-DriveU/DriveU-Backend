@@ -20,6 +20,16 @@ const client = new Client({
     }
 });
 
+//The gatherCurrentTripData function retrieves the current trip data for a given future trip ID and ride request ID.
+const gatherCurrentTripData = async (futureTripId, rideRequestId) => {
+    let res = {};
+    res.futureTrip = await findFutureTrip(futureTripId);
+    res.rideRequest = await findRideRequest(rideRequestId);
+    res.driver = await findUserById(res.futureTrip.driverId);
+    res.rider = await findUserById(res.rideRequest.riderId);
+    return res;
+}
+
 //The doesUserExist function checks if a user with the given Firebase UID exists in the database.
 const doesUserExist = async (firebaseUid) => {
     const query = {
@@ -519,4 +529,4 @@ client.connect()
     }
 
 //The functions are exported for use in other files.
-module.exports = { close, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripStartTime, updateFutureTripTimeAtDestination, updateRideRequestPickupTime, updateRideRequestDropOffTime, updateRiderRating, updateDriverRating };
+module.exports = { gatherCurrentTripData, close, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripStartTime, updateFutureTripTimeAtDestination, updateRideRequestPickupTime, updateRideRequestDropOffTime, updateRiderRating, updateDriverRating };

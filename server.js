@@ -16,7 +16,7 @@ const express = require('express');
 const session = require('express-session');
 const fs = require('fs');
 const bodyParser = require('body-parser');
-const { doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripTimeAtDestination, updateFutureTripStartTime, updateRideRequestPickupTime, updateRideRequestDropOffTime, updateRiderRating, updateDriverRating } = require('./database');
+const { gatherCurrentTripData, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripTimeAtDestination, updateFutureTripStartTime, updateRideRequestPickupTime, updateRideRequestDropOffTime, updateRiderRating, updateDriverRating } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
@@ -531,8 +531,7 @@ app.put('/acceptRideRequest', async (req, res) => {
         }
         //The response is sent to the client.
         response.status = "OK";
-        response.rideRequest = result.rideRequest.rows[0];
-        response.futureTrip = result.futureTrip.rows[0];
+        response.tripInfo = await gatherCurrentTripData(futureTrip.id, req.query.rideRequestId);
         res.status(201).json(response);
     } catch (error) {
         response.status = "ERROR";
@@ -736,6 +735,7 @@ app.put('/startTrip', async (req, res) => {
             return;
         }
 
+        response.tripInfo = await gatherCurrentTripData(futureTrip.id, rideRequest.id);
         response.status = "OK";
         res.json(response);
     } catch (error) {
@@ -771,6 +771,7 @@ app.put('/pickupRider', async (req, res) => {
             return;
         }
 
+        response.tripInfo = await gatherCurrentTripData(futureTrip.id, rideRequest.id);
         response.status = "OK";
         res.json(response);
     } catch (error) {
@@ -855,7 +856,6 @@ app.put('/reachedDestination', async (req, res) => {
                 }
                 await deleteFutureTrip(rideRequest.futureTripId);
                 await deleteRideRequest(req.query.rideRequestId);
-                response.item = result.rows[0];
 
                 //SEND PAYPAL PAYOUT TO DRIVER =============================================================================================
                 let driverCost = trip.driverPayout;
@@ -877,7 +877,12 @@ app.put('/reachedDestination', async (req, res) => {
                 }catch(error){
                     console.log("NOTIFICATION ERROR: ", error);
                 }
-                
+
+                response.tripInfo = {};
+                response.tripInfo.trip = result.rows[0];
+                response.tripInfo.driver = await findUserById(trip.driverId);
+                response.tripInfo.rider = await findUserById(trip.riderId);
+
                 response.status = "OK";
                 res.status(201).json(response);
                 return;
@@ -891,6 +896,7 @@ app.put('/reachedDestination', async (req, res) => {
             }
         }
 
+        response.tripInfo = await gatherCurrentTripData(futureTrip.id, rideRequest.id);
         response.status = "OK";
         res.json(response);
     } catch (error) {
@@ -929,6 +935,7 @@ app.put('/leaveDestination', async (req, res) => {
             return;
         }
 
+        response.tripInfo = await gatherCurrentTripData(futureTrip.id, rideRequest.id);
         response.status = "OK";
         res.json(response);
     } catch (error) {
@@ -985,7 +992,10 @@ app.put('/dropOffRider', async (req, res) => {
         }
         await deleteFutureTrip(rideRequest.futureTripId);
         await deleteRideRequest(req.query.rideRequestId);
-        response.item = result.rows[0];
+        response.tripInfo = {};
+        response.tripInfo.trip = result.rows[0];
+        response.tripInfo.driver = await findUserById(trip.driverId);
+        response.tripInfo.rider = await findUserById(trip.riderId);
 
         //SEND PAYPAL PAYOUT TO DRIVER =============================================================================================
         let driverCost = trip.driverPayout;
