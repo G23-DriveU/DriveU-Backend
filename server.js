@@ -787,9 +787,16 @@ app.put('/reachedDestination', async (req, res) => {
     console.log("PUT REACHED DESTINATION: ", req.query);
     let response = {};
     try {
-        //The ride request and future trip are retrieved from the database.
-        let rideRequest = await findRideRequest(req.query.rideRequestId);
-        let futureTrip = await findFutureTrip(rideRequest.futureTripId);
+        //The accepted ride request is found using the futureTripId.
+        let rideRequests = (await findRideRequestsForTrip(req.query.futureTripId)).items;
+        let rideRequest = null;
+        for (let i = 0; i < rideRequests.length; i++) {
+            if (rideRequests[i].status == "accepted") {
+                rideRequest = rideRequests[i];
+                console.log("Accepted ride request: ", rideRequest);
+            }
+        }
+        let futureTrip = await findFutureTrip(req.query.futureTripId);
 
         //The driver's location is checked to see if they are close enough to the destination.
         latConversion = 0.1 / 69;
@@ -815,7 +822,7 @@ app.put('/reachedDestination', async (req, res) => {
         }
 
         //The ride request status is updated.
-        let updateStatus = await updateRideRequestStatus(req.query.rideRequestId, "at destination");
+        let updateStatus = await updateRideRequestStatus(rideRequest.id, "at destination");
         if (updateStatus.rowCount === 0) {
             response.status = "ERROR";
             response.error = "Failed to update status";
@@ -843,7 +850,7 @@ app.put('/reachedDestination', async (req, res) => {
                     res.status(500).json(response);
                     return;
                 }
-                rideRequest = await findRideRequest(req.query.rideRequestId);
+                rideRequest = await findRideRequest(rideRequest.id);
                 futureTrip = await findFutureTrip(rideRequest.futureTripId);
                 let trip = new Trip(futureTrip, rideRequest);
                 result = await insertTrip(trip);
@@ -855,7 +862,7 @@ app.put('/reachedDestination', async (req, res) => {
                     return;
                 }
                 await deleteFutureTrip(rideRequest.futureTripId);
-                await deleteRideRequest(req.query.rideRequestId);
+                await deleteRideRequest(rideRequest.id);
 
                 //SEND PAYPAL PAYOUT TO DRIVER =============================================================================================
                 let driverCost = trip.driverPayout;
@@ -882,7 +889,6 @@ app.put('/reachedDestination', async (req, res) => {
                 response.tripInfo.trip = result.rows[0];
                 response.tripInfo.driver = await findUserById(trip.driverId);
                 response.tripInfo.rider = await findUserById(trip.riderId);
-
                 response.status = "OK";
                 res.status(201).json(response);
                 return;
@@ -951,9 +957,18 @@ app.put('/dropOffRider', async (req, res) => {
     console.log("PUT DROP OFF RIDER: ", req.query);
     let response = {};
     try {
+        //The accepted ride request is found using the futureTripId.
+        let rideRequests = (await findRideRequestsForTrip(req.query.futureTripId)).items;
+        let rideRequest = null;
+        for (let i = 0; i < rideRequests.length; i++) {
+            if (rideRequests[i].status == "accepted") {
+                rideRequest = rideRequests[i];
+                console.log("Accepted ride request: ", rideRequest);
+            }
+        }
+
         //The ride request and future trip are retrieved from the database.
-        let rideRequest = await findRideRequest(req.query.rideRequestId);
-        let futureTrip = await findFutureTrip(rideRequest.futureTripId);
+        let futureTrip = await findFutureTrip(req.query.futureTripId);
 
         //The driver's location is checked to see if they are close enough to the rider's dropoff location.
         latConversion = 0.1 / 69;
@@ -969,7 +984,7 @@ app.put('/dropOffRider', async (req, res) => {
         }
 
         //The dropoff time is updated in the database.
-        let updateDropOffTime = await updateRideRequestDropOffTime(req.query.rideRequestId, req.query.dropOffTime);
+        let updateDropOffTime = await updateRideRequestDropOffTime(rideRequest.id, req.query.dropOffTime);
         if (updateDropOffTime.rowCount === 0) {
             response.status = "ERROR";
             response.error = "Failed to update dropoff time";
@@ -979,7 +994,7 @@ app.put('/dropOffRider', async (req, res) => {
         }
 
         //The ride request and future trip are converted to a past trip.
-        rideRequest = await findRideRequest(req.query.rideRequestId);
+        rideRequest = await findRideRequest(rideRequest.id);
         futureTrip = await findFutureTrip(rideRequest.futureTripId);
         let trip = new Trip(futureTrip, rideRequest);
         result = await insertTrip(trip);
@@ -991,7 +1006,7 @@ app.put('/dropOffRider', async (req, res) => {
             return;
         }
         await deleteFutureTrip(rideRequest.futureTripId);
-        await deleteRideRequest(req.query.rideRequestId);
+        await deleteRideRequest(rideRequest.id);
         response.tripInfo = {};
         response.tripInfo.trip = result.rows[0];
         response.tripInfo.driver = await findUserById(trip.driverId);
