@@ -149,6 +149,39 @@ app.put('/users', async (req, res) => {
     }
 });
 
+//GET Users Interactions will take in the userId and send back the past users they have interacted with.
+app.get('/users/interactions', async (req, res) => {
+    console.log("GET INTERACTIONS: ", req.query);
+    let response = {};
+    try {
+        let riderTrips = await findRiderTrips(req.query.userId);
+        let driverTrips = await findDriverTrips(req.query.userId);
+        let drivers = [];
+        let riders = [];
+
+        //The drivers and riders are found from the trips.
+        let i = 0;
+        for (i = 0; i < riderTrips.length; i++) {
+            if (drivers.includes(riderTrips[i].driver)) continue;
+            drivers.push(riderTrips[i].driver);
+        }
+        for (i = 0; i < driverTrips.length; i++) {
+            if (riders.includes(driverTrips[i].rider)) continue;
+            riders.push(driverTrips[i].rider);
+        }
+
+        response.riders = riders;
+        response.drivers = drivers;
+        response.status = "OK";
+        res.json(response);
+    } catch (error) {
+        response.status = "ERROR";
+        response.error = error.toString();
+        console.log("GET INTERACTIONS ERROR", error);
+        res.status(500).json(response);
+    }
+});
+
 //GET trips will take in the userId and send all trips for that user to client.
 app.get('/trips', async (req, res) => {
     console.log("GET TRIP: ", req.query);
