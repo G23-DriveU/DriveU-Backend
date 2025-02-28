@@ -18,6 +18,7 @@ exports.getLocalGasPrices = async (lat, lng) => {
                 lng: lng
             }
         });
+        console.log('Gas prices:', response);
         return response.data; // Return the gas price data
     } catch (error) {
         console.error('Error fetching gas prices:', error);

@@ -124,7 +124,9 @@ class FutureTrip {
 
         //The distance and estimated time of arrival (ETA) are extracted from the API response.
         this.distance = this.metersToMiles(response.data.routes[0].legs[0].distance.value);
-        this.gasPrice = (await fuelPrices.getLocalGasPrices(this.startLocationLat, this.startLocationLng)).result.gasoline;
+        //TODO: Change this to back once COLLECT API FIXES UP
+        this.gasPrice = 3.10;
+        //this.gasPrice = (await fuelPrices.getLocalGasPrices(this.startLocationLat, this.startLocationLng)).result.gasoline;
         this.eta = this.startTime + response.data.routes[0].legs[0].duration.value;
         this.ets = this.eta;
         if (roundTrip == true) {
