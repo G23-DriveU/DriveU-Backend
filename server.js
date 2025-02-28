@@ -22,6 +22,7 @@ const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
 const RideRequest = require('./RideRequest');
 const Trip = require('./Trip');
+const fuelPrices = require('./fuelPrices');
 const paypal = require('./paypal');
 const carStats = require('./carStats');
 const sendNotification = require('./notification.js').sendNotification;
