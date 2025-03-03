@@ -127,8 +127,8 @@ class RideRequest {
         this.dropoffTime = this.eta;
         if (roundTrip) {
             const findFutureTrip = (await import('./database.js')).findFutureTrip;
-            this.futureTrip = await findFutureTrip(reqBody.futureTripId);
-            this.dropoffTime = this.eta + response.data.routes[0].legs[2].duration.value + this.futureTrip.timeAtDestination;
+            this.futureTrip = await findFutureTrip(this.futureTripId);
+            this.dropoffTime = this.eta + response.data.routes[0].legs[2].duration.value + parseFloat(this.futureTrip.timeAtDestination);
         }
     }
 
