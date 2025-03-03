@@ -805,7 +805,9 @@ app.put('/pickupRider', async (req, res) => {
             return;
         }
 
-        response.tripInfo = await gatherCurrentTripData(futureTrip.id, rideRequest.id);
+        let rideRequest = await findRideRequest(req.query.rideRequestId);
+
+        response.tripInfo = await gatherCurrentTripData(rideRequest.futureTripId, req.query.rideRequestId);
         response.status = "OK";
         res.json(response);
     } catch (error) {
@@ -825,7 +827,7 @@ app.put('/reachedDestination', async (req, res) => {
         let rideRequests = (await findRideRequestsForTrip(req.query.futureTripId)).items;
         let rideRequest = null;
         for (let i = 0; i < rideRequests.length; i++) {
-            if (rideRequests[i].status == "accepted") {
+            if (rideRequests[i].status == "picked up") {
                 rideRequest = rideRequests[i];
                 console.log("Accepted ride request: ", rideRequest);
             }
@@ -995,7 +997,7 @@ app.put('/dropOffRider', async (req, res) => {
         let rideRequests = (await findRideRequestsForTrip(req.query.futureTripId)).items;
         let rideRequest = null;
         for (let i = 0; i < rideRequests.length; i++) {
-            if (rideRequests[i].status == "accepted") {
+            if (rideRequests[i].status == "left destination") {
                 rideRequest = rideRequests[i];
                 console.log("Accepted ride request: ", rideRequest);
             }
