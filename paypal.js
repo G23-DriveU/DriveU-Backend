@@ -75,7 +75,7 @@ exports.createOrder = async (tripCost) => {
                 {
                     items: [
                         {
-                            name: 'Trip1',
+                            name: 'DriveU Trip',
                             unit_amount: {
                                 currency_code: 'USD',    
                                 value: tripCost
