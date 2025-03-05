@@ -163,12 +163,14 @@ app.get('/users/interactions', async (req, res) => {
         //The drivers and riders are found from the trips.
         let i = 0;
         for (i = 0; i < riderTrips.length; i++) {
-            if (drivers.includes(riderTrips[i].driver)) continue;
-            drivers.push(riderTrips[i].driver);
+            if (!drivers.some(driver => driver.id === riderTrips[i].driver.id)) {
+                drivers.push(riderTrips[i].driver);
+            }
         }
         for (i = 0; i < driverTrips.length; i++) {
-            if (riders.includes(driverTrips[i].rider)) continue;
-            riders.push(driverTrips[i].rider);
+            if (!riders.some(rider => rider.id === driverTrips[i].rider.id)) {
+                riders.push(driverTrips[i].rider);
+            }
         }
 
         response.riders = riders;
@@ -451,7 +453,7 @@ app.post('/rideRequests', async (req, res) => {
         let newRideRequest = await RideRequest.createRideRequest(req.query);
 
         let futureTrip = await findFutureTrip(newRideRequest.futureTripId);
-        let rider = await findUserById(newRideRequest.riderId);
+        let rider = await findUserById(newRideRequest);
         let driver = await findUserById(futureTrip.driverId);
         let driverFcm = driver.fcmToken;
         
