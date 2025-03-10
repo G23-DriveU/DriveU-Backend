@@ -772,12 +772,21 @@ app.put('/startTrip', async (req, res) => {
         let riderFcm = rider.fcmToken;
         let eta = rideRequest.pickupTime;
         let driver = await findUserById(futureTrip.driverId);
+
+        const date = new Date(eta * 1000);
+        let hours = date.getHours();
+        const minutes = date.getMinutes();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12; // the hour is 0, so it will be 12
+        const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+        const formattedEta = hours + ':' + minutesStr + ' ' + ampm;
         //SEND NOTIFICATION TO RIDER OF DRIVER PICKUP TIME ============================================================
         
         try{
             const notification = await sendNotification(
                 "Pickup Time Update",
-                `${driver.name} is estimated to pick you up at ${eta}`,
+                `${driver.name} is estimated to pick you up at ${formattedEta}`,
                 riderFcm
             );
             console.log("NOTIFICATION SENT: ", notification);
