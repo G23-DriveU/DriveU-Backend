@@ -362,6 +362,8 @@ app.post('/futureTrips', async (req, res) => {
             return;
         }
 
+        let driver = await findUserById(newTrip.driverId);
+        let driverFcm = driver.fcmToken;
         let beforeTime = newTrip.startTime - 1800;
         //CREATE CHRON JOB TO REMIND DRIVER 30 MIN BEFORE
 
