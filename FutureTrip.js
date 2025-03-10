@@ -45,7 +45,7 @@ class FutureTrip {
     }
 
     //This function creates a new FutureTrip object from the database.
-    static createFutureTripFromDatabase(reqBody) {
+    static async createFutureTripFromDatabase(reqBody) {
         let updatedBody = {
             driverId: reqBody.driver_id,
             startLocation: reqBody.start_location,
@@ -55,6 +55,7 @@ class FutureTrip {
             avoidTolls: reqBody.avoid_tolls,
             carCapacity: reqBody.car_capacity,
         };
+        const findUserById = (await import('./database.js')).findUserById;
         let futureTrip = new FutureTrip(updatedBody);
         futureTrip.id = reqBody.id;
         futureTrip.roundTrip = reqBody.round_trip;
@@ -70,6 +71,18 @@ class FutureTrip {
         futureTrip.gasPrice = reqBody.gas_price;
         futureTrip.isFull = reqBody.is_full;
         futureTrip.ets = reqBody.ets;
+        futureTrip.driver = await findUserById(futureTrip.driverId);
+        if (futureTrip.isFull === true) {
+            const findRideRequestsForTrip = (await import('./database.js')).findRideRequestsForTrip;
+            let rideRequests = await findRideRequestsForTrip(futureTrip.id);
+            rideRequests = rideRequests.items;
+            for (let i = 0; i < rideRequests.length; i++) {
+                if (rideRequests[i].status !== "pending") {
+                    futureTrip.rideRequest = rideRequests[i];
+                    break;
+                }
+            }
+        }
         return futureTrip;
     }
 

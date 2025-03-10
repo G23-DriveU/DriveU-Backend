@@ -119,7 +119,7 @@ const insertFutureTrip = async (newTrip) => {
     let result = await client.query('INSERT INTO future_trips (driver_id, start_location, start_location_lat, start_location_lng, destination, destination_lat, destination_lng, start_time, eta, time_at_destination, distance, gas_price, avoid_highways, avoid_tolls, car_capacity, round_trip, is_full, ets) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING *',
         [newTrip.driverId, newTrip.startLocation, newTrip.startLocationLat, newTrip.startLocationLng, newTrip.destination, newTrip.destinationLat, newTrip.destinationLng, newTrip.startTime, newTrip.eta, newTrip.timeAtDestination, newTrip.distance, newTrip.gasPrice, newTrip.avoidHighways, newTrip.avoidTolls, newTrip.carCapacity, newTrip.roundTrip, false, newTrip.ets]);
     if (result.rows.length > 0) {
-        result.rows[0] = FutureTrip.createFutureTripFromDatabase(result.rows[0]);
+        result.rows[0] = await FutureTrip.createFutureTripFromDatabase(result.rows[0]);
         return result;
     }
     return;
@@ -133,7 +133,7 @@ const findFutureTripsForDriver = async (driverId) => {
     };
     let result = await client.query(query);
     for (let i = 0; i < result.rows.length; i++) {
-        result.rows[i] = FutureTrip.createFutureTripFromDatabase(result.rows[i]);
+        result.rows[i] = await FutureTrip.createFutureTripFromDatabase(result.rows[i]);
     }
     return result;
 }
@@ -146,7 +146,7 @@ const findFutureTripsForRider = async (riderId) => {
     };
     let result = await client.query(query);
     for (let i = 0; i < result.rows.length; i++) {
-        result.rows[i] = FutureTrip.createFutureTripFromDatabase(result.rows[i]);
+        result.rows[i] = await FutureTrip.createFutureTripFromDatabase(result.rows[i]);
     }
     return result;
 }
@@ -159,7 +159,7 @@ const findFutureTrip = async (futureTripId) => {
     };
     let result = await client.query(query);
     if (result.rows.length > 0) {
-        return FutureTrip.createFutureTripFromDatabase(result.rows[0]);
+        return await FutureTrip.createFutureTripFromDatabase(result.rows[0]);
     }
     return;
 }
@@ -181,7 +181,7 @@ const findFutureTripsByRadius = async (riderId, radius, lat, lng, roundTrip) => 
     result.items = [];
     result.count = 0;
     for (let i = 0; i < futureTripCount; i++) {
-        result.items[result.count] = FutureTrip.createFutureTripFromDatabase(futureTrips[i]);
+        result.items[result.count] = await FutureTrip.createFutureTripFromDatabase(futureTrips[i]);
         let calculation = ((result.items[result.count].destinationLng - lng) ** 2) / (lngConversion ** 2) + ((result.items[result.count].destinationLat - lat) ** 2) / (latConversion ** 2);
         if (calculation <= 1) {
             result.count++;
