@@ -361,6 +361,14 @@ app.post('/futureTrips', async (req, res) => {
             res.status(500).json(response);
             return;
         }
+
+        let beforeTime = newTrip.startTime - 1800;
+        //CREATE CHRON JOB TO REMIND DRIVER 30 MIN BEFORE
+
+        let afterTime = newTrip.startTime + 1800;
+        //IF FUTURE TRIP IS FULL AND RIDE REQUEST IS NOT PENDING/ACCEPTED, DELETE
+        //CREATE CHRON JOB TO DELETE TRIP 30 MIN AFTER
+
         response.item = result.rows[0];
         response.status = "OK";
         res.status(201).json(response);
@@ -912,8 +920,8 @@ app.put('/reachedDestination', async (req, res) => {
             let riderFcm = rider.fcmToken;
             let driverFcm = driver.fcmToken;
             let notificationTime = req.query.arrivalTime + futureTrip.timeAtDestination; //in seconds from epoch
-            //SETUP NOTIFICATION FOR RIDER AND DRIVER AFTER TIME AT DESTINATION============================================================
 
+            //SETUP CHRON JOB TO NOTIFY RIDER AND DRIVER 5 MIN BEFORE
         } else {
             //The trip is ended and moved to past trips.
             try {
