@@ -605,6 +605,12 @@ app.delete('/rideRequestsByRider', async (req, res) => {
     let response = {};
     try {
         let rideRequest = await findRideRequest(req.query.rideRequestId);
+        if (!(rideRequest.status == "accepted" || rideRequest.status == "pending")) {
+            response.status = "ERROR";
+            response.error = "Ride request is already in progress";
+            console.log("RIDE REQUEST ALREADY IN PROGRESS");
+            res.status(409).json(response);
+        }
         let authId = rideRequest.authorizationId;
         //void payment
         let voidPaymentResult = await paypal.voidAuthorization(authId);
