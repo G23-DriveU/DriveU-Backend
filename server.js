@@ -211,6 +211,28 @@ app.get('/trips', async (req, res) => {
     }
 });
 
+//GET futureTrip will return all trip information associated with a future trip.
+app.get('/futureTrip', async (req, res) => {
+    console.log("GET FUTURE TRIP: ", req.query);
+    let response = {};
+    try {
+        response.futureTrip = await findFutureTrip(req.query.futureTripId);
+        response.status = "OK";
+        if (response.futureTrip == null) {
+            response.status = "ERROR";
+            response.error = "Future trip not found";
+            res.status(404).send('Future Trip not found');
+            return;
+        }
+        res.json(response);
+    } catch (error) {
+        response.status = "ERROR";
+        response.error = error.toString();
+        console.log("GET FUTURE TRIP ERROR", error);
+        res.status(500).json(response);
+    }
+});
+
 //GET futureTripsForDriver will take in driverId and send all future trips for that driver to client.
 app.get('/futureTripsForDriver', async (req, res) => {
     console.log("GET FUTURE TRIPS FOR DRIVER: ", req.query);
