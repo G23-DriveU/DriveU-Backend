@@ -395,8 +395,6 @@ app.delete('/futureTrips', async (req, res) => {
     let response = {};
     console.log("DELETE FUTURE TRIPS: ", req.query);
     try {
-        req.query.futureTripId = parseInt(req.query.futureTripId);
-        req.query.driverId = parseInt(req.query.driverId);
         let result = await findRideRequestsForTrip(req.query.futureTripId);
         for (let i = 0; i < result.items.length; i++) {
             let authId = result.items[i].authorizationId;
@@ -487,7 +485,7 @@ app.post('/rideRequests', async (req, res) => {
         let newRideRequest = await RideRequest.createRideRequest(req.query);
 
         let futureTrip = await findFutureTrip(newRideRequest.futureTripId);
-        let rider = await findUserById(newRideRequest);
+        let rider = await findUserById(newRideRequest.riderId);
         let driver = await findUserById(futureTrip.driverId);
         let driverFcm = driver.fcmToken;
         
