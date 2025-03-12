@@ -395,6 +395,8 @@ app.delete('/futureTrips', async (req, res) => {
     let response = {};
     console.log("DELETE FUTURE TRIPS: ", req.query);
     try {
+        req.query.futureTripId = parseInt(req.query.futureTripId);
+        req.query.driverId = parseInt(req.query.driverId);
         let result = await findRideRequestsForTrip(req.query.futureTripId);
         for (let i = 0; i < result.items.length; i++) {
             let authId = result.items[i].authorizationId;
