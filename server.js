@@ -26,6 +26,7 @@ const fuelPrices = require('./fuelPrices');
 const paypal = require('./paypal');
 const carStats = require('./carStats');
 const sendNotification = require('./notification.js').sendNotification;
+const scheduleNotification = require('./notification.js').scheduleNotification;
 
 //The express app is created and the port is set to 8080.
 const app = express();
