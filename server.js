@@ -1310,5 +1310,24 @@ app.post("/notification", async (req, res) => {
     }
 });
 
+//schedule notification endpoint
+app.post("/schedule-notification", (req, res) => {
+    const { token, title, body, timeInSeconds } = req.body;
+
+    const currentTime = new Date();
+
+    // Calculate the time to send the notification
+    const sendTime = new Date(currentTime.getTime() + timeInSeconds * 1000);
+
+    // Format the send time for cron (second minute hour day month day-of-week)
+    const cronTime = `${sendTime.getSeconds()} ${sendTime.getMinutes()} ${sendTime.getHours()} ${sendTime.getDate()} ${sendTime.getMonth() + 1} *`;
+
+    console.log(`Current time: ${currentTime}`); // Debugging log
+    console.log(`Calculated sendTime: ${sendTime}`); // Debugging log
+    console.log(`Formatted cronTime: ${cronTime}`); // Debugging log
+
+    scheduleNotification(token, title, body, cronTime);
+    res.status(200).send("Notification scheduled successfully");
+});
 //The app and server are exported.
 module.exports = { app, server };
