@@ -50,5 +50,5 @@ const scheduleNotification = async (token, title, body, cronTime) => {
     console.log('Cron job scheduled'); // Debugging log
 };
 
-//The function is exported.
+//The functions are exported.
 module.exports = { sendNotification, scheduleNotification };
