@@ -308,8 +308,8 @@ const deleteRideRequest = async (rideRequestId) => {
 
 //The insertTrip function inserts a new trip object into the database.
 const insertTrip = async (newTrip) => {
-    let result = await client.query('INSERT INTO trips (driver_id, rider_id, start_location, start_location_lat, start_location_lng, rider_location, rider_location_lat, rider_location_lng, destination, destination_lat, destination_lng, started_at, picked_up_at, arrived_at, round_trip, time_at_destination, dropped_off_at, ended_at, driver_payout, rider_cost, distance) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) RETURNING *',
-        [newTrip.driverId, newTrip.riderId, newTrip.startLocation, newTrip.startLocationLat, newTrip.startLocationLng, newTrip.riderLocation, newTrip.riderLocationLat, newTrip.riderLocationLng, newTrip.destination, newTrip.destinationLat, newTrip.destinationLng, newTrip.startedAt, newTrip.pickedUpAt, newTrip.arrivedAt, newTrip.roundTrip, newTrip.timeAtDestination, newTrip.droppedOffAt, newTrip.endedAt, newTrip.driverPayout, newTrip.riderCost, newTrip.distance]);
+    let result = await client.query('INSERT INTO trips (driver_id, rider_id, start_location, start_location_lat, start_location_lng, rider_location, rider_location_lat, rider_location_lng, destination, destination_lat, destination_lng, started_at, picked_up_at, arrived_at, round_trip, driver_rated, rider_rated, time_at_destination, dropped_off_at, ended_at, driver_payout, rider_cost, distance) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23) RETURNING *',
+        [newTrip.driverId, newTrip.riderId, newTrip.startLocation, newTrip.startLocationLat, newTrip.startLocationLng, newTrip.riderLocation, newTrip.riderLocationLat, newTrip.riderLocationLng, newTrip.destination, newTrip.destinationLat, newTrip.destinationLng, newTrip.startedAt, newTrip.pickedUpAt, newTrip.arrivedAt, newTrip.roundTrip, false, false, newTrip.timeAtDestination, newTrip.droppedOffAt, newTrip.endedAt, newTrip.driverPayout, newTrip.riderCost, newTrip.distance]);
     if (result.rows.length > 0) {
         result.rows[0] = Trip.createTripFromDatabase(result.rows[0]);
         return result;
@@ -343,6 +343,16 @@ const findDriverTrips = async (userId) => {
         result.rows[i].rider = await findUserById(result.rows[i].riderId);
     }
     return result.rows;
+}
+
+//The findTrip function retrieves a trip object from the database based on the trip ID.
+const findTrip = async (tripId) => {
+    let query = {
+        text: 'SELECT * FROM trips WHERE id = $1',
+        values: [tripId],
+    };
+    let result = await client.query(query);
+    return Trip.createTripFromDatabase(result.rows[0]);
 }
 
 //The updateFutureTripETA function updates the eta of a future trip to the actual arrival time.
@@ -396,22 +406,34 @@ const updateRideRequestDropOffTime = async (rideRequestId, newDropOffTime) => {
 }
 
 //The updateDriverRating function updates the driver rating in the database.
-const updateDriverRating = async (driverId, ratingCount, newRating) => {
+const updateDriverRating = async (driverId, ratingCount, newRating, tripId) => {
     let query = {
         text: 'UPDATE users SET driver_rating = $1, driver_review_count = $2 WHERE id = $3',
         values: [newRating, ratingCount, driverId],
     }
-    let result = await client.query(query);
+    let result = {};
+    result.rating = await client.query(query);
+    query = {
+        text: 'UPDATE trips SET driver_rated = true WHERE id = $1',
+        values: [tripId],
+    }
+    result.boolean = await client.query(query);
     return result;
 }
 
 //The updateRiderRating function updates the rider rating in the database.
-const updateRiderRating = async (riderId, ratingCount, newRating) => {
+const updateRiderRating = async (riderId, ratingCount, newRating, tripId) => {
     let query = {
         text: 'UPDATE users SET rider_rating = $1, rider_review_count = $2 WHERE id = $3',
         values: [newRating, ratingCount, riderId],
     }
-    let result = await client.query(query);
+    let result = {};
+    result.rating = await client.query(query);
+    query = {
+        text: 'UPDATE trips SET rider_rated = true WHERE id = $1',
+        values: [tripId],
+    }
+    result.boolean = await client.query(query);
     return result;
 }
 
@@ -460,6 +482,8 @@ client.connect()
                 picked_up_at BIGINT,
                 arrived_at BIGINT,
                 round_trip BOOLEAN,
+                driver_rated BOOLEAN,
+                rider_rated BOOLEAN,
                 time_at_destination BIGINT,
                 dropped_off_at BIGINT,
                 ended_at BIGINT,
@@ -529,4 +553,4 @@ client.connect()
     }
 
 //The functions are exported for use in other files.
-module.exports = { gatherCurrentTripData, close, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripStartTime, updateFutureTripTimeAtDestination, updateRideRequestPickupTime, updateRideRequestDropOffTime, updateRiderRating, updateDriverRating };
+module.exports = { gatherCurrentTripData, close, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, findTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripStartTime, updateFutureTripTimeAtDestination, updateRideRequestPickupTime, updateRideRequestDropOffTime, updateRiderRating, updateDriverRating };

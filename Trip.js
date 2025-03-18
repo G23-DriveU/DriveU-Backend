@@ -28,6 +28,8 @@ class Trip {
         this.driverPayout = rideRequest.driverPayout;
         this.riderCost = rideRequest.riderCost;
         this.distance = rideRequest.distance;
+        this.driverRated = false;
+        this.riderRated = false;
         return this;
     }
 
@@ -59,6 +61,8 @@ class Trip {
             roundTrip: reqBody.round_trip,
         }
         let trip = new Trip(futureTrip, rideRequest);
+        trip.driverRated = reqBody.driver_rated;
+        trip.riderRated = reqBody.rider_rated;
         trip.id = reqBody.id;
         return trip;
     }

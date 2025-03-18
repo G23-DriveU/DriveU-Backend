@@ -16,7 +16,7 @@ const express = require('express');
 const session = require('express-session');
 const fs = require('fs');
 const bodyParser = require('body-parser');
-const { gatherCurrentTripData, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripTimeAtDestination, updateFutureTripStartTime, updateRideRequestPickupTime, updateRideRequestDropOffTime, updateRiderRating, updateDriverRating } = require('./database');
+const { gatherCurrentTripData, doesUserExist, insertUser, findUser, findUserById, updateUser, findRiderTrips, findDriverTrips, insertFutureTrip, findFutureTripsForDriver, findFutureTripsForRider, findFutureTripsByRadius, setFutureTripFull, deleteFutureTrip, findFutureTrip, insertRideRequest, findRideRequest, findRideRequestsForTrip, findRideRequestsForRider, deleteRideRequest, insertTrip, findTrip, updateFcmToken, updateRideRequestStatus, updateFutureTripETA, updateFutureTripTimeAtDestination, updateFutureTripStartTime, updateRideRequestPickupTime, updateRideRequestDropOffTime, updateRiderRating, updateDriverRating } = require('./database');
 const User = require('./User');
 const Driver = require('./Driver');
 const FutureTrip = require('./FutureTrip');
@@ -1123,17 +1123,27 @@ app.put('/rateRider', async (req, res) => {
     console.log("PUT RATE RIDER: ", req.query);
     let response = {};
     try {
+        let trip = await findTrip(req.query.tripId);
+        if (trip.riderRated === true) {
+            response.status = "ERROR";
+            response.error = "Driver has already rated rider";
+            console.log("PUT RATE RIDER ERROR");
+            res.status(400).json(response);
+            return;
+        }
+
         let rider = await findUserById(req.query.riderId);
         req.query.rating = parseInt(req.query.rating);
         let newRating = (rider.riderRating * rider.riderReviewCount + req.query.rating) / (rider.riderReviewCount + 1);
-        let result = await updateRiderRating(req.query.riderId, rider.riderReviewCount + 1, newRating);
-        if (result.rowCount === 0) {
+        let result = await updateRiderRating(req.query.riderId, rider.riderReviewCount + 1, newRating, req.query.tripId);
+        if (result.rating.rowCount === 0 || result.boolean.rowCount === 0) {
             response.status = "ERROR";
             response.error = "Failed to update rider rating";
             console.log("UPDATE RIDER RATING ERROR");
             res.status(500).json(response);
             return;
         }
+        response.trip = await findTrip(req.query.tripId);
 
         response.status = "OK";
         res.json(response);
@@ -1150,17 +1160,27 @@ app.put('/rateDriver', async (req, res) => {
     console.log("PUT RATE DRIVER: ", req.query);
     let response = {};
     try {
+        let trip = await findTrip(req.query.tripId);
+        if (trip.driverRated === true) {
+            response.status = "ERROR";
+            response.error = "Rider has already rated driver";
+            console.log("PUT RATE RIDER ERROR");
+            res.status(400).json(response);
+            return;
+        }
+
         let driver = await findUserById(req.query.driverId);
         req.query.rating = parseInt(req.query.rating);
         let newRating = (driver.driverRating * driver.driverReviewCount + req.query.rating) / (driver.driverReviewCount + 1);
-        let result = await updateDriverRating(req.query.driverId, driver.driverReviewCount + 1, newRating);
-        if (result.rowCount === 0) {
+        let result = await updateDriverRating(req.query.driverId, driver.driverReviewCount + 1, newRating, req.query.tripId);
+        if (result.rating.rowCount === 0 || result.boolean.rowCount === 0) {
             response.status = "ERROR";
             response.error = "Failed to update driver rating";
             console.log("UPDATE DRIVER RATING ERROR");
             res.status(500).json(response);
             return;
         }
+        response.trip = await findTrip(req.query.tripId);
 
         response.status = "OK";
         res.json(response);
