@@ -1053,6 +1053,15 @@ app.put('/dropOffRider', async (req, res) => {
             }
         }
 
+        //The ride request does not exist (or is already ended).
+        if (rideRequest == null) {
+            response.status = "ERROR";
+            response.error = "No ride request found";
+            console.log("NO RIDE REQUEST FOUND");
+            res.status(501).json(response);
+            return;
+        }
+
         //The ride request and future trip are retrieved from the database.
         let futureTrip = await findFutureTrip(req.query.futureTripId);
 
