@@ -924,6 +924,14 @@ app.put('/reachedDestination', async (req, res) => {
         }
         let futureTrip = await findFutureTrip(req.query.futureTripId);
 
+        if (!rideRequest) {
+            response.status = "ERROR";
+            response.error = "No ride request found";
+            console.log("NO RIDE REQUEST FOUND");
+            res.status(501).json(response);
+            return;
+        }
+
         //The driver's location is checked to see if they are close enough to the destination.
         latConversion = 0.3 / 69;
         lngConversion = 0.3 / (69 * Math.cos(futureTrip.destinationLat * Math.PI / 180));
