@@ -918,7 +918,7 @@ app.put('/reachedDestination', async (req, res) => {
                 response.status = "ERROR";
                 response.error = "Rider has already reached destination";
                 console.log("REACHED DESTINATION ERROR: Rider has already reached destination");
-                res.status(501).json(response);
+                res.status(201).json(response);
                 return;
             }
         }
@@ -928,7 +928,7 @@ app.put('/reachedDestination', async (req, res) => {
             response.status = "ERROR";
             response.error = "No ride request found";
             console.log("NO RIDE REQUEST FOUND");
-            res.status(501).json(response);
+            res.status(201).json(response);
             return;
         }
 
@@ -1153,7 +1153,7 @@ app.put('/dropOffRider', async (req, res) => {
             response.status = "ERROR";
             response.error = "No ride request found";
             console.log("NO RIDE REQUEST FOUND");
-            res.status(501).json(response);
+            res.status(201).json(response);
             return;
         }
 
