@@ -902,12 +902,19 @@ app.put('/reachedDestination', async (req, res) => {
                 rideRequest = rideRequests[i];
                 console.log("Accepted ride request: ", rideRequest);
             }
+            if (rideRequests[i].status == "at destination") {
+                response.status = "ERROR";
+                response.error = "Rider has already reached destination";
+                console.log("REACHED DESTINATION ERROR: Rider has already reached destination");
+                res.status(501).json(response);
+                return;
+            }
         }
         let futureTrip = await findFutureTrip(req.query.futureTripId);
 
         //The driver's location is checked to see if they are close enough to the destination.
-        latConversion = 0.1 / 69;
-        lngConversion = 0.1 / (69 * Math.cos(futureTrip.destinationLat * Math.PI / 180));
+        latConversion = 0.3 / 69;
+        lngConversion = 0.3 / (69 * Math.cos(futureTrip.destinationLat * Math.PI / 180));
         let calculation = ((futureTrip.destinationLng - req.query.lng) ** 2) / (lngConversion ** 2) + ((futureTrip.destinationLat - req.query.lat) ** 2) / (latConversion ** 2);
         if (calculation > 1) {
             //The driver is not close enough to the destination.
@@ -1087,8 +1094,8 @@ app.put('/dropOffRider', async (req, res) => {
         let futureTrip = await findFutureTrip(req.query.futureTripId);
 
         //The driver's location is checked to see if they are close enough to the rider's dropoff location.
-        latConversion = 0.1 / 69;
-        lngConversion = 0.1 / (69 * Math.cos(rideRequest.riderLocationLat * Math.PI / 180));
+        latConversion = 0.3 / 69;
+        lngConversion = 0.3 / (69 * Math.cos(rideRequest.riderLocationLat * Math.PI / 180));
         let calculation = ((rideRequest.riderLocationLng - req.query.lng) ** 2) / (lngConversion ** 2) + ((rideRequest.riderLocationLat - req.query.lat) ** 2) / (latConversion ** 2);
         if (calculation > 1) {
             //The driver is not close enough to the rider's dropoff location.
