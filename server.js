@@ -817,7 +817,7 @@ app.put('/startTrip', async (req, res) => {
         
         try{
             const notification = await sendNotification(
-                "Pickup Time Update",
+                "Driver is on the way",
                 `${driver.name} is estimated to pick you up at ${formattedEta}`,
                 riderFcm
             );
