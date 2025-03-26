@@ -389,6 +389,7 @@ app.post('/futureTrips', async (req, res) => {
         } else {
             console.log("Not scheduling notification — it's not exactly 30 minutes before the trip.");
         }
+
         let afterTime = newTrip.startTime + 1800;
         //IF FUTURE TRIP IS FULL AND RIDE REQUEST IS NOT PENDING/ACCEPTED, DELETE
         //CREATE CHRON JOB TO DELETE TRIP 30 MIN AFTER
@@ -961,9 +962,37 @@ app.put('/reachedDestination', async (req, res) => {
             let driver = await findUserById(futureTrip.driverId);
             let riderFcm = rider.fcmToken;
             let driverFcm = driver.fcmToken;
-            let notificationTime = req.query.arrivalTime + futureTrip.timeAtDestination; //in seconds from epoch
+            let notificationTime = req.query.arrivalTime + futureTrip.timeAtDestination - 300; //in seconds from epoch
 
             //SETUP CHRON JOB TO NOTIFY RIDER AND DRIVER 5 MIN BEFORE
+            let notiTimeInSeconds = notificationTime - Math.floor(Date.now() / 1000);
+
+            if (notiTimeInSeconds >= 0){
+                try{
+                    const sendTime = new Date(notificationTime * 1000);
+
+                    //Format to send time for cron 
+                    const cronTime = `${sendTime.getSeconds()} ${sendTime.getMinutes()} ${sendTime.getHours()} ${sendTime.getDate()} ${sendTime.getMonth() + 1} *`;
+
+                    await scheduleNotification(
+                        driverFcm,
+                        "Trip Reminder",
+                        "The second leg of your trip is expected to start in five minutes.",
+                        cronTime
+                    );
+
+                    await scheduleNotification(
+                        riderFcm,
+                        "Trip Reminder",
+                        "The second leg of your trip is expected to start in five minutes.",
+                        cronTime
+                    );
+                } catch(error){
+                    console.log("Error scheduling notification:", error);
+                }
+            } else {
+                console.log("Not scheduling notification — the time has passed.");
+            }
         } else {
             //The trip is ended and moved to past trips.
             try {
