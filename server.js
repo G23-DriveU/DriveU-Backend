@@ -1023,8 +1023,8 @@ app.put('/reachedDestination', async (req, res) => {
                 let driver = await findUserById(trip.driverId);
                 let driverPaypalId = driver.payerId;
                 try {
-                    let payout = paypal.createPayout(driverPaypalId, driverCost);
-                    console.log("PAYOUT: ", payout);
+                    //let payout = paypal.createPayout(driverPaypalId, driverCost);
+                    //console.log("PAYOUT: ", payout);
                 } catch (error) {
                     console.log("PAYOUT ERROR: ", error);
                 }
@@ -1199,8 +1199,8 @@ app.put('/dropOffRider', async (req, res) => {
         let driver = await findUserById(trip.driverId);
         let driverPaypalId = driver.payerId;
         try {
-            let payout = paypal.createPayout(driverPaypalId, driverCost);
-            console.log("PAYOUT: ", payout);
+            //let payout = paypal.createPayout(driverPaypalId, driverCost);
+            //console.log("PAYOUT: ", payout);
         } catch (error) {
             console.log("PAYOUT ERROR: ", error);
         }
