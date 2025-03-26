@@ -27,6 +27,7 @@ const paypal = require('./paypal');
 const carStats = require('./carStats');
 const sendNotification = require('./notification.js').sendNotification;
 const scheduleNotification = require('./notification.js').scheduleNotification;
+const scheduleFutureTripDeletion = require('./notification.js').scheduleFutureTripDeletion;
 
 //The express app is created and the port is set to 8080.
 const app = express();
@@ -369,12 +370,11 @@ app.post('/futureTrips', async (req, res) => {
         //CREATE CHRON JOB TO REMIND DRIVER 30 MIN BEFORE
         let beforeTimeInSeconds = beforeTime - Math.floor(Date.now() / 1000);
 
-        if(beforeTimeInSeconds >= 0 && beforeTimeInSeconds <= 5){
+        if (beforeTimeInSeconds >= 0){
             try{
-                const currentTime = new Date();
-                const sendTime = new Date(currentTime.getTime() + beforeTimeInSeconds * 1000);
+                const sendTime = new Date(beforeTime * 1000);
 
-                //Format to sned time for cron 
+                //Format to send time for cron 
                 const cronTime = `${sendTime.getSeconds()} ${sendTime.getMinutes()} ${sendTime.getHours()} ${sendTime.getDate()} ${sendTime.getMonth() + 1} *`;
 
                 await scheduleNotification(
@@ -392,6 +392,17 @@ app.post('/futureTrips', async (req, res) => {
         let afterTime = newTrip.startTime + 1800;
         //IF FUTURE TRIP IS FULL AND RIDE REQUEST IS NOT PENDING/ACCEPTED, DELETE
         //CREATE CHRON JOB TO DELETE TRIP 30 MIN AFTER
+
+        let afterTimeInSeconds = afterTime - Math.floor(Date.now() / 1000);
+        if (afterTimeInSeconds >= 0){
+            const sendTime = new Date(afterTime * 1000);
+
+            //Format to send time for cron 
+            const cronTime = `${sendTime.getSeconds()} ${sendTime.getMinutes()} ${sendTime.getHours()} ${sendTime.getDate()} ${sendTime.getMonth() + 1} *`;
+
+            //UNCOMMENT AFTER DEMO!!!!
+            //await scheduleFutureTripDeletion(result.rows[0].id, cronTime, driverFcm);
+        }        
 
         response.item = result.rows[0];
         response.status = "OK";
@@ -440,7 +451,7 @@ app.delete('/futureTrips', async (req, res) => {
                 try{
                     const notification = await sendNotification(
                         "Ride Cancelled",
-                        `Yor upcoming ride has been cancelled`,
+                        `Your upcoming ride has been cancelled`,
                         riderFcm
                     );
                     console.log("NOTIFICATION SENT: ", notification);
