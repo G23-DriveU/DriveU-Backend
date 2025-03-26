@@ -1022,16 +1022,35 @@ app.put('/reachedDestination', async (req, res) => {
                 let driverCost = trip.driverPayout;
                 let driver = await findUserById(trip.driverId);
                 let driverPaypalId = driver.payerId;
+                try {
+                    let payout = paypal.createPayout(driverPaypalId, driverCost);
+                    console.log("PAYOUT: ", payout);
+                } catch (error) {
+                    console.log("PAYOUT ERROR: ", error);
+                }
 
                 let rider = await findUserById(trip.riderId);
                 let riderFcm = rider.fcmToken;
-                //SEND NOTIFICATION TO RIDER TO RATE =======================================================================================
+                //SEND NOTIFICATION TO USERS TO RATE =======================================================================================
                 
                 try{
                     const notification = await sendNotification(
                         "Rate Your Ride",
                         `Please give ${driver.name} a rating`,
                         riderFcm
+                    );
+                    console.log("NOTIFICATION SENT: ", notification);
+                    
+                }catch(error){
+                    console.log("NOTIFICATION ERROR: ", error);
+                }
+
+                let driverFcm = driver.fcmToken;
+                try{
+                    const notification = await sendNotification(
+                        "Rate Your Rider",
+                        `Please give ${rider.name} a rating`,
+                        driverFcm
                     );
                     console.log("NOTIFICATION SENT: ", notification);
                     
@@ -1179,11 +1198,41 @@ app.put('/dropOffRider', async (req, res) => {
         let driverCost = trip.driverPayout;
         let driver = await findUserById(trip.driverId);
         let driverPaypalId = driver.payerId;
+        try {
+            let payout = paypal.createPayout(driverPaypalId, driverCost);
+            console.log("PAYOUT: ", payout);
+        } catch (error) {
+            console.log("PAYOUT ERROR: ", error);
+        }
 
         let rider = await findUserById(trip.riderId);
         let riderFcm = rider.fcmToken;
-        //SEND NOTIFICATION TO RIDER TO RATE =======================================================================================
-        
+        let driverFcm = driver.fcmToken;
+        //SEND NOTIFICATION TO USERS TO RATE =======================================================================================
+        try{
+            const notification = await sendNotification(
+                "Rate Your Ride",
+                `Please give ${driver.name} a rating`,
+                riderFcm
+            );
+            console.log("NOTIFICATION SENT: ", notification);
+            
+        }catch(error){
+            console.log("NOTIFICATION ERROR: ", error);
+        }
+
+        try{
+            const notification = await sendNotification(
+                "Rate Your Rider",
+                `Please give ${rider.name} a rating`,
+                driverFcm
+            );
+            console.log("NOTIFICATION SENT: ", notification);
+            
+        }catch(error){
+            console.log("NOTIFICATION ERROR: ", error);
+        }
+
         response.status = "OK";
         res.status(201).json(response);
         return;
