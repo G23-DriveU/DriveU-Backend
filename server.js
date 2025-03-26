@@ -367,7 +367,28 @@ app.post('/futureTrips', async (req, res) => {
         let driverFcm = driver.fcmToken;
         let beforeTime = newTrip.startTime - 1800;
         //CREATE CHRON JOB TO REMIND DRIVER 30 MIN BEFORE
+        let beforeTimeInSeconds = beforeTime - Math.floor(Date.now() / 1000);
 
+        if(beforeTimeInSeconds >= 0 && beforeTimeInSeconds <= 5){
+            try{
+                const currentTime = new Date();
+                const sendTime = new Date(currentTime.getTime() + beforeTimeInSeconds * 1000);
+
+                //Format to sned time for cron 
+                const cronTime = `${sendTime.getSeconds()} ${sendTime.getMinutes()} ${sendTime.getHours()} ${sendTime.getDate()} ${sendTime.getMonth() + 1} *`;
+
+                await scheduleNotification(
+                    driverFcm,
+                    "Trip Reminder",
+                    "Your scheduled trip is starting in 30 minutes. Please be prepared.",
+                    cronTime
+                );
+            } catch(error){
+                console.log("Error scheduling notification:", error);
+            }
+        } else {
+            console.log("Not scheduling notification — it's not exactly 30 minutes before the trip.");
+        }
         let afterTime = newTrip.startTime + 1800;
         //IF FUTURE TRIP IS FULL AND RIDE REQUEST IS NOT PENDING/ACCEPTED, DELETE
         //CREATE CHRON JOB TO DELETE TRIP 30 MIN AFTER
