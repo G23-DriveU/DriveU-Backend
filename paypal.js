@@ -172,7 +172,7 @@ exports.capturePayment = async (orderId) => {
     }
 }
 
-exports.createPayout= async (recipientEmail, amount) => {
+exports.createPayout= async (paypalId, amount) => {
     const accessToken = await generateAccessToken()
 
     const response = await axios.post(process.env.PAYPAL_BASE_URL + '/v1/payments/payouts', {
@@ -182,12 +182,12 @@ exports.createPayout= async (recipientEmail, amount) => {
         },
         items: [
             {
-                recipient_type: 'EMAIL',
+                recipient_type: 'PAYPAL_ID',
                 amount: {
                     value: amount,
                     currency: "USD"
                 },
-                receiver: recipientEmail,
+                receiver: paypalId,
                 note: 'Thank you for your business.',
                 sender_item_id: `item_${new Date().getTime()}`
             }
