@@ -135,6 +135,9 @@ const findFutureTripsForDriver = async (driverId) => {
     for (let i = 0; i < result.rows.length; i++) {
         result.rows[i] = await FutureTrip.createFutureTripFromDatabase(result.rows[i]);
     }
+    result.rows.sort((a, b) => {
+        return a.startTime - b.startTime;
+    });
     return result;
 }
 
@@ -261,6 +264,7 @@ const findRideRequestsForTrip = async (futureTripId) => {
         result.items[i] = RideRequest.createRideRequestFromDatabase(result.items[i]);
         result.items[i].rider = await findUserById(result.items[i].riderId);
     }
+
     return result;
 }
 
@@ -283,6 +287,9 @@ const findRideRequestsForRider = async (riderId) => {
         result.items[i].futureTrip = await findFutureTrip(result.items[i].futureTripId);
         result.items[i].futureTrip.driver = await findUserById(result.items[i].futureTrip.driverId);
     }
+    result.items.sort((a, b) => {
+        return a.futureTrip.startTime - b.futureTrip.startTime;
+    });
     return result;
 }
 
