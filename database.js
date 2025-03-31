@@ -335,6 +335,7 @@ const findRiderTrips = async (userId) => {
         result.rows[i] = Trip.createTripFromDatabase(result.rows[i]);
         result.rows[i].driver = await findUserById(result.rows[i].driverId);
     }
+    result.rows.reverse();
     return result.rows;
 }
 
@@ -349,6 +350,7 @@ const findDriverTrips = async (userId) => {
         result.rows[i] = Trip.createTripFromDatabase(result.rows[i]);
         result.rows[i].rider = await findUserById(result.rows[i].riderId);
     }
+    result.rows.reverse();
     return result.rows;
 }
 
