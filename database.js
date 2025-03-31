@@ -335,7 +335,9 @@ const findRiderTrips = async (userId) => {
         result.rows[i] = Trip.createTripFromDatabase(result.rows[i]);
         result.rows[i].driver = await findUserById(result.rows[i].driverId);
     }
-    result.rows.reverse();
+    result.rows.sort((a, b) => {
+        return b.endedAt - a.endedAt;
+    })
     return result.rows;
 }
 
@@ -350,7 +352,9 @@ const findDriverTrips = async (userId) => {
         result.rows[i] = Trip.createTripFromDatabase(result.rows[i]);
         result.rows[i].rider = await findUserById(result.rows[i].riderId);
     }
-    result.rows.reverse();
+    result.rows.sort((a, b) => {
+        return b.endedAt - a.endedAt;
+    })
     return result.rows;
 }
 
