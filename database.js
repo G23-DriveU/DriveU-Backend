@@ -336,7 +336,7 @@ const findRiderTrips = async (userId) => {
         result.rows[i].driver = await findUserById(result.rows[i].driverId);
     }
     result.rows.sort((a, b) => {
-        return b.endedAt - a.endedAt;
+        return b.arrivedAt - a.arrivedAt;
     })
     return result.rows;
 }
@@ -353,7 +353,7 @@ const findDriverTrips = async (userId) => {
         result.rows[i].rider = await findUserById(result.rows[i].riderId);
     }
     result.rows.sort((a, b) => {
-        return b.endedAt - a.endedAt;
+        return b.arrivedAt - a.arrivedAt;
     })
     return result.rows;
 }
