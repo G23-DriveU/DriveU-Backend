@@ -2,12 +2,6 @@
 This is the server.js file and runs the backend server for DriveU.
 
 After login, userId from Postgres will be used, NOT firebase_uid
-
-TODO
-UNIT TESTING
-Add notification functionality
-Incorporate paypal and cost functionality to ride requests (completed payment voiding and capturing, still need to implement payouts)
-automatically cancel future trips 30 mins after and send notifications to driver 5 mins before?
 */
 
 //Necessary imports are handled for server.js.
